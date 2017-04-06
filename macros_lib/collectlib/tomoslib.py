@@ -6,12 +6,14 @@ NAME = 0
 POS_X = 1
 POS_Y = 2
 POS_Z = 3
-ZONE_PLATES = 4
-REGIONS = 5
-FF_POS_X = 6
-FF_POS_Y = 7
-EXP_TIME_FF = 8
-N_IMAGES = 9
+ENERGIES = 4
+ZP_CENTRAL_POS = 5
+ZP_STEP = 6
+REGIONS = 7
+FF_POS_X = 8
+FF_POS_Y = 9
+EXP_TIME_FF = 10
+N_IMAGES = 11
 
 REGION_START = 0
 REGION_END = 1
@@ -19,22 +21,19 @@ REGION_STEP = 2
 REGION_EXPTIME = 3
 
 ENERGY = 0
-ENERGY_ZONE_PLATES = 1
 
 FILE_NAME = 'manytomos.txt'
 
 samples = [
     [
         'sample1', # name
-        2, # pos x
-        3, # pos y
-        4, # pos z
-        [ # pairs of energies and zone plate position
-            [
-                #800, # energy
-                50, # central zone_plate
-                2 # zone_plate step
-            ],
+        0, # pos x
+        0, # pos y
+        0, # pos z
+        50, # central zone_plate
+        1, # zone_plate step
+        [#energies
+            100, 200
         ],
         [# angular regions
             [
@@ -70,7 +69,7 @@ class ManyTomos(GenericTXMcommands):
         if energy is None:
             energy = self.current_energy
         base_name = ('%s_%.1f_%.1f' % (sample_name, theta, zone_plate))
-        if not energy is None:
+        if energy is not None:
             base_name = '%s_%.1f' % (base_name, energy)
         extension = 'xrm'
         if self._repetitions == 1 or self._repetitions is None:
@@ -81,68 +80,31 @@ class ManyTomos(GenericTXMcommands):
                 file_name = '%s_%d.%s' % (base_name, repetition, extension)
                 self.destination.write('collect %s\n' % file_name)
 
-    def collectZonePlates(self, zone_plates):
-        for zone_plate in zone_plates:
-            self.moveZonePlateZ(zone_plate)
-            self.collect()
-
-    def collectRegion(self, zone_plates, start, end, step, exp_time):
+    def collectRegion(self, zp_central_pos, zp_step,
+                      start, end, step, exp_time):
         assert start != end, "Region start must be different than end"
         if end - start < 1:
             step *= -1
         positions = np.arange(start, end, step)
         positions = np.append(positions, end)
         self.setExpTime(exp_time)
-
-        # only zone plates
-        if len(zone_plates[0]) == 2:
-            for theta in positions:
-                self.moveTheta(theta)
-                zp_central_pos = zone_plates[0][0]
-                zp_step = zone_plates[0][1]
-                # Only one zp position used if zp_step is equal 0
-                if zp_step == 0:
-                    zp_single_pos_list = [zp_central_pos]
-                    self.collectZonePlates(zp_single_pos_list)
-                # Three zp positions used if zp_step is different than 0
-                else:
-                    zp_pos1 = zp_central_pos - zp_step
-                    zp_pos2 = zp_central_pos
-                    zp_pos3 = zp_central_pos + zp_step
-                    inner_zone_plates = [zp_pos1, zp_pos2, zp_pos3]
-                    self.collectZonePlates(inner_zone_plates)
-        # energies and zone plates
-        else:
-            energy_zp_pairs = zone_plates
-            for zp_central_pos, zp_step, energy in energy_zp_pairs:
-                self.moveEnergy(energy)
-                # wait until energy reaches its position
-                # (collect does not wait for the external moveables)
-                self.wait(60)
-                # repeat the move many times to correct backlash
-                self.moveEnergy(energy)
-                self.wait(10)
-                self.moveEnergy(energy)
-                self.wait(5)
-                self.moveEnergy(energy)
-                self.wait(5)
-                for theta in positions:
-                    self.moveTheta(theta)
-                    # Only one zp position used if zp_step is equal 0
-                    if zp_step == 0:
-                        zp_single_pos_list = [zp_central_pos]
-                        self.collectZonePlates(zp_single_pos_list)
-                    # Three zp positions used if zp_step is different than 0
-                    else:
-                        zp_pos1 = zp_central_pos - zp_step
-                        zp_pos2 = zp_central_pos
-                        zp_pos3 = zp_central_pos + zp_step
-                        inner_zone_plates = [zp_pos1, zp_pos2, zp_pos3]
-                        self.collectZonePlates(inner_zone_plates)
+        for theta in positions:
+            self.moveTheta(theta)
+            # Only one zp position used if zp_step is equal 0
+            if zp_step == 0:
+                zone_plates = [zp_central_pos]
+            # Three zp positions used if zp_step is different than 0
+            else:
+                zp_pos1 = zp_central_pos - zp_step
+                zp_pos2 = zp_central_pos
+                zp_pos3 = zp_central_pos + zp_step
+                zone_plates = [zp_pos1, zp_pos2, zp_pos3]
+            for zone_plate in zone_plates:
+                self.moveZonePlateZ(zone_plate)
+                self.collect()
 
     def collectSample(self, sample):
         self.current_sample_name = sample[NAME]
-        zone_plates = sample[ZONE_PLATES]
         pos_x = sample[POS_X]
         self.moveX(pos_x)
         pos_y = sample[POS_Y]
@@ -153,13 +115,15 @@ class ManyTomos(GenericTXMcommands):
         self.moveTheta(-71.0)
         # wait 10 s so the theta movement has time to execute
         self.wait(10)
+        zp_central_pos = sample[ZP_CENTRAL_POS]
+        zp_step = sample[ZP_STEP]
         regions = sample[REGIONS]
         try:
             self._repetitions = sample[N_IMAGES]
         except IndexError:
             self._repetitions = None
         for region in regions:
-            self.collectRegion(zone_plates, *region)
+            self.collectRegion(zp_central_pos, zp_step, *region)
 
     def collectFF(self, sample):
         """Execute flat field acquisitions
@@ -181,9 +145,24 @@ class ManyTomos(GenericTXMcommands):
     def collectData(self):
         self.setBinning()
         for sample in self.samples:
-            self.collectSample(sample)
-            self.collectFF(sample)
-            # wait 5 minutes between samples
+            energies = sample[ENERGIES]
+            for energy in energies:
+
+                self.moveEnergy(energy)
+                # wait until energy reaches its position
+                # (collect does not wait for the external moveables)
+                self.wait(60)
+                # repeat the move many times to correct backlash
+                self.moveEnergy(energy)
+                self.wait(10)
+                self.moveEnergy(energy)
+                self.wait(5)
+                self.moveEnergy(energy)
+                self.wait(5)
+
+                self.collectSample(sample)
+                self.collectFF(sample)
+                # wait 5 minutes between samples
             self.wait(300)
 
 
