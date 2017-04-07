@@ -45,6 +45,15 @@ class GenericTXMcommands(object):
     def moveZ(self, z):
         self.destination.write('moveto Z %6.2f\n' % z)
 
+    def go_to_sample_xyz_pos(self, pos_x, pos_y, pos_z):
+        self.moveX(pos_x)
+        self.moveY(pos_y)
+        self.moveZ(pos_z)
+
+    def go_to_sample_xy_pos(self, pos_x, pos_y):
+        self.moveX(pos_x)
+        self.moveY(pos_y)
+
     def moveZonePlateZ(self, zone_plate):
         self.current_zone_plate = zone_plate
         self.destination.write('moveto ZPz %6.2f\n' % zone_plate)
@@ -60,11 +69,28 @@ class GenericTXMcommands(object):
         self.current_energy = energy
         self.destination.write('moveto energy %6.2f\n' % energy)
 
+    def go_to_energy(self, energy):
+        self.moveEnergy(energy)
+        # wait until energy reaches its position
+        # (collect does not wait for the external moveables)
+        self.wait(60)
+        # repeat the move many times to correct backlash
+        self.moveEnergy(energy)
+        self.wait(10)
+        self.moveEnergy(energy)
+        self.wait(5)
+        self.moveEnergy(energy)
+        self.wait(5)
+        self.moveEnergy(energy)
+
     def setExpTime(self, exp_time):
         self.destination.write('setexp %6.1f\n' % exp_time)
 
     def wait(self, wait_time):
         self.destination.write('wait %s\n' % wait_time)
+
+    def collect_data(self):
+        pass
 
     def generate(self):
         if self.file_name is None:
@@ -72,4 +98,4 @@ class GenericTXMcommands(object):
         else:
             destination = open(self.file_name, 'w')
         with destination as self.destination:
-            self.collectData()
+            self.collect_data()

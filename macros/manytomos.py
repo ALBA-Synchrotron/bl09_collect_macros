@@ -2,8 +2,11 @@ from sardana.macroserver.macro import Macro, Type
 from sardana.macroserver.msexception import UnknownEnv
 from collectlib.tomoslib import ManyTomos
 
-energy_def = [['energy', Type.Float, None, 'Beam energy'],
-              {'min': 1}]
+energy_zp_def = [['energy', Type.Float, None, 'Beam energy'],
+                 ['det_z', Type.Float, None, 'Detector Z position'],
+                 ['zp_z', Type.Float, None, 'ZonePlate Z position'],
+                 ['zp_step', Type.Float, None, 'ZonePlate step'],
+                 {'min': 1}]
 
 regions_def = [['start', Type.Float, None, 'Theta start position'],
                ['end', Type.Float, None, 'Theta end position'],
@@ -14,9 +17,8 @@ regions_def = [['start', Type.Float, None, 'Theta start position'],
 # name position in sample
 NAME = 0
 
-# ZP_Z position in sample
-ZP_central_pos = 5
-ZP_step = 6
+# energy_zp position in the macro parameters
+E_ZP_ZONES = 4
 
 class manytomosbase(object):
     """Generates TXM input file with commands to perform multi-sample tomo
@@ -25,20 +27,22 @@ class manytomosbase(object):
 
     def _verify_samples(self, samples, zp_limit_neg, zp_limit_pos):
         for sample in samples:
-            zp_central_pos = sample[ZP_central_pos]
-            zp_step = sample[ZP_step]
-            zp_pos_1 = zp_central_pos - zp_step
-            zp_pos_2 = zp_central_pos
-            zp_pos_3 = zp_central_pos + zp_step
-            zp_positions = [zp_pos_1, zp_pos_2, zp_pos_3]
-            counter = 0
-            for zp_position in zp_positions:
-                if zp_position < zp_limit_neg or zp_position > zp_limit_pos:
-                    counter += 1
-                    msg = ("The sample {0} has the zone_plate {1} out of"
-                           " range. The accepted range is from %s to"
-                           " %s um.") % (zp_limit_neg, zp_limit_pos)
-                    raise ValueError(msg.format(sample[NAME], counter))
+            for counter, e_zp_zone in enumerate(sample[E_ZP_ZONES]):
+                zp_central_pos = e_zp_zone[2]
+                zp_step = e_zp_zone[3]
+                if zp_step == 0:
+                    zp_positions = [zp_central_pos]
+                else:
+                    zp_pos_1 = zp_central_pos - zp_step
+                    zp_pos_2 = zp_central_pos
+                    zp_pos_3 = zp_central_pos + zp_step
+                    zp_positions = [zp_pos_1, zp_pos_2, zp_pos_3]
+                for zp_position in zp_positions:
+                    if zp_position < zp_limit_neg or zp_position > zp_limit_pos:
+                        msg = ("The sample {0} has the zone_plate {1} out of"
+                               " range. The accepted range is from %s to"
+                               " %s um.") % (zp_limit_neg, zp_limit_pos)
+                        raise ValueError(msg.format(sample[NAME], counter+1))
 
     def run(self, samples, filename):
         try:
@@ -61,10 +65,7 @@ class manytomos(manytomosbase, Macro):
                      ['pos_x', Type.Float, None, 'Position of the X motor'],
                      ['pos_y', Type.Float, None, 'Position of the Y motor'],
                      ['pos_z', Type.Float, None, 'Position of the Z motor'],
-                     ['energies', energy_def, None, 'Beam energies'],
-                     ['ZP_central_pos', Type.Float, None, 'Central ZP '
-                                                          'z position'],
-                     ['ZP_step', Type.Float, None, 'Zone plate z step'],
+                     ['energy_zp', energy_zp_def, None, 'energy ZP zones'],
                      ['sample_theta', regions_def, None, ('Regions of the'
                                                           ' theta motor')],
                      ['ff_pos_x', Type.Float, None, ('Position of the X motor'

@@ -6,14 +6,12 @@ NAME = 0
 POS_X = 1
 POS_Y = 2
 POS_Z = 3
-ENERGIES = 4
-ZP_CENTRAL_POS = 5
-ZP_STEP = 6
-REGIONS = 7
-FF_POS_X = 8
-FF_POS_Y = 9
-EXP_TIME_FF = 10
-N_IMAGES = 11
+ENERGIES_ZP = 4
+ANGULAR_REGIONS = 5
+FF_POS_X = 6
+FF_POS_Y = 7
+EXP_TIME_FF = 8
+N_IMAGES = 9
 
 REGION_START = 0
 REGION_END = 1
@@ -21,6 +19,9 @@ REGION_STEP = 2
 REGION_EXPTIME = 3
 
 ENERGY = 0
+DET_Z = 1
+ZP_Z = 2
+ZP_STEP = 3
 
 FILE_NAME = 'manytomos.txt'
 
@@ -30,10 +31,13 @@ samples = [
         0, # pos x
         0, # pos y
         0, # pos z
-        50, # central zone_plate
-        1, # zone_plate step
-        [#energies
-            100, 200
+        [#energies and zoneplates
+            [
+                100, # energy
+                20000, # detector Z position
+                50, # ZP Z central position
+                2 # ZP step
+            ]
         ],
         [# angular regions
             [
@@ -68,9 +72,8 @@ class ManyTomos(GenericTXMcommands):
             theta = self.current_theta
         if energy is None:
             energy = self.current_energy
-        base_name = ('%s_%.1f_%.1f' % (sample_name, theta, zone_plate))
-        if energy is not None:
-            base_name = '%s_%.1f' % (base_name, energy)
+        base_name = ('%s_%.1f_%.1f_%.1f' % (sample_name, theta,
+                                            zone_plate, energy))
         extension = 'xrm'
         if self._repetitions == 1 or self._repetitions is None:
             file_name = '%s.%s' % (base_name, extension)
@@ -80,89 +83,77 @@ class ManyTomos(GenericTXMcommands):
                 file_name = '%s_%d.%s' % (base_name, repetition, extension)
                 self.destination.write('collect %s\n' % file_name)
 
-    def collectRegion(self, zp_central_pos, zp_step,
-                      start, end, step, exp_time):
-        assert start != end, "Region start must be different than end"
-        if end - start < 1:
-            step *= -1
-        positions = np.arange(start, end, step)
-        positions = np.append(positions, end)
-        self.setExpTime(exp_time)
-        for theta in positions:
-            self.moveTheta(theta)
+    def collect_sample(self, sample):
+        for e_zp_zone in sample[ENERGIES_ZP]:
+            self.current_sample_name = sample[NAME]
+
+            energy = e_zp_zone[ENERGY]
+            self.go_to_energy(energy)
+
+            det_z = e_zp_zone[DET_Z]
+            self.moveDetector(det_z)
+
+            zp_central_pos = e_zp_zone[ZP_Z]
+            zp_step = e_zp_zone[ZP_STEP]
             # Only one zp position used if zp_step is equal 0
             if zp_step == 0:
-                zone_plates = [zp_central_pos]
-            # Three zp positions used if zp_step is different than 0
-            else:
-                zp_pos1 = zp_central_pos - zp_step
-                zp_pos2 = zp_central_pos
-                zp_pos3 = zp_central_pos + zp_step
-                zone_plates = [zp_pos1, zp_pos2, zp_pos3]
-            for zone_plate in zone_plates:
-                self.moveZonePlateZ(zone_plate)
-                self.collect()
+                self.moveZonePlateZ(zp_central_pos)
 
-    def collectSample(self, sample):
-        self.current_sample_name = sample[NAME]
-        pos_x = sample[POS_X]
-        self.moveX(pos_x)
-        pos_y = sample[POS_Y]
-        self.moveY(pos_y)
-        pos_z = sample[POS_Z]
-        self.moveZ(pos_z)
-        # move theta to the min angle, in order to avoid backlash
-        self.moveTheta(-71.0)
-        # wait 10 s so the theta movement has time to execute
-        self.wait(10)
-        zp_central_pos = sample[ZP_CENTRAL_POS]
-        zp_step = sample[ZP_STEP]
-        regions = sample[REGIONS]
-        try:
+            self.go_to_sample_xyz_pos(sample[POS_X],
+                                      sample[POS_Y],
+                                      sample[POS_Z])
+
+            # move theta to the min angle, in order to avoid backlash
+            self.moveTheta(-71.0)
+
+            angular_regions = sample[ANGULAR_REGIONS]
             self._repetitions = sample[N_IMAGES]
-        except IndexError:
-            self._repetitions = None
-        for region in regions:
-            self.collectRegion(zp_central_pos, zp_step, *region)
 
-    def collectFF(self, sample):
-        """Execute flat field acquisitions
-        """
-        # move theta to 0 - it is necessary for flat field measurement
-        self.moveTheta(0)
-        # wait 10 s so the theta movement has time to execute
-        self.wait(10)
-        ff_pos_x = sample[FF_POS_X]
-        self.moveX(ff_pos_x)
-        ff_pos_y = sample[FF_POS_Y]
-        self.moveY(ff_pos_y)
-        exp_time_ff = sample[EXP_TIME_FF]
-        self.setExpTime(exp_time_ff)
-        sample_name = sample[NAME]
-        for i in xrange(1,11):
-            self.destination.write('collect %s_FF_%d.xrm\n' % (sample_name, i))
+            for angular_region in angular_regions:
+                start = angular_region[REGION_START]
+                end = angular_region[REGION_END]
+                angle_step = angular_region[REGION_STEP]
+                exp_time = angular_region[REGION_EXPTIME]
+                assert start != end, "Region start must be different than end"
+                if end - start < 1:
+                    angle_step *= -1
+                positions = np.arange(start, end, angle_step)
+                positions = np.append(positions, end)
+                self.setExpTime(exp_time)
 
-    def collectData(self):
+                # Acquisition of an image for each ZP, at each angle,
+                # at each Energy.
+                for theta in positions:
+                    self.moveTheta(theta)
+                    # Single-focus
+                    if zp_step == 0:
+                        self.collect()
+                    # Multi-focus: Three ZP positions used.
+                    else:
+                        zp_pos1 = zp_central_pos - zp_step
+                        zp_pos2 = zp_central_pos
+                        zp_pos3 = zp_central_pos + zp_step
+                        zone_plates = [zp_pos1, zp_pos2, zp_pos3]
+                        for zone_plate in zone_plates:
+                            self.moveZonePlateZ(zone_plate)
+                            self.collect()
+
+            # Execute flat field acquisitions #
+            # move theta to 0 degrees - necessary for flat field measurement
+            self.moveTheta(0)
+            self.go_to_sample_xy_pos(sample[FF_POS_X],
+                                     sample[FF_POS_Y])
+            self.setExpTime(sample[EXP_TIME_FF])
+            sample_name = '%s_%.1f' % (sample[NAME], energy)
+            for i in range(1,11):
+                self.destination.write('collect %s_FF_%d.xrm\n' % (sample_name,
+                                                                   i))
+
+    def collect_data(self):
         self.setBinning()
         for sample in self.samples:
-            energies = sample[ENERGIES]
-            for energy in energies:
-
-                self.moveEnergy(energy)
-                # wait until energy reaches its position
-                # (collect does not wait for the external moveables)
-                self.wait(60)
-                # repeat the move many times to correct backlash
-                self.moveEnergy(energy)
-                self.wait(10)
-                self.moveEnergy(energy)
-                self.wait(5)
-                self.moveEnergy(energy)
-                self.wait(5)
-
-                self.collectSample(sample)
-                self.collectFF(sample)
-                # wait 5 minutes between samples
+            self.collect_sample(sample)
+            # wait 5 minutes between samples
             self.wait(300)
 
 

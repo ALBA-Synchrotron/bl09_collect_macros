@@ -181,7 +181,7 @@ class EnergyScan(GenericTXMcommands):
         self.moveZonePlateZ(zp_start)      
         self.moveDetector(det_start)
 
-    def collectData(self):
+    def collect_data(self):
         self.setBinning()
         for sample in self.samples:
             self.collect_escan(sample)
