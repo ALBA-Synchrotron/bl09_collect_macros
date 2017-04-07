@@ -121,8 +121,8 @@ class EnergyScan(GenericTXMcommands):
             e_start = energy_region[E_START]
             e_end = energy_region[E_END]
             e_step = energy_region[E_STEP]
-            num_e_steps = int(round(e_end - e_start)/e_step + 1)
-            energies = np.linspace(e_start, e_end, num_e_steps)
+            energies = np.arange(e_start, e_end, e_step)
+            energies = np.append(energies, e_end)
 
             # Fixed increment of step counts in each range
             # Number of steps of 0.1eV in a single Energy step
