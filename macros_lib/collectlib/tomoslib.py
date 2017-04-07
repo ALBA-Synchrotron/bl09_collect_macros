@@ -105,6 +105,7 @@ class ManyTomos(GenericTXMcommands):
 
             # move theta to the min angle, in order to avoid backlash
             self.moveTheta(-71.0)
+            self.wait(10)
 
             angular_regions = sample[ANGULAR_REGIONS]
             self._repetitions = sample[N_IMAGES]
