@@ -14,10 +14,10 @@ sample_pos_def = [['pos_x', Type.Float, None, 'Position of the X motor'],
                   {'min': 1, 'max': 80 }]
 
 
-
 class energyscanbase(object):
-    """Generates TXM input file with commands to perform multi-sample tomo
-    measurements.
+    """Generate TXM input file for image data collection, to perform spectrum
+    measurements. Keeping the same angle, and taking images at
+    many different energies (energy scan).
     """
 
     def run(self, samples, out_file):
@@ -33,7 +33,7 @@ class energyscan(energyscanbase, Macro):
                                                                 ' sample to be'
                                                                 ' imaged')],
                      ['energy_regions', energy_def, None, ('Regions of the'
-                         ' energy motor')],
+                                                           ' energy motor')],
                      ['ZP_start', Type.Float, None, 'ZP start position'],
                      ['ZP_end', Type.Float, None, 'ZP end position'],
                      ['Det_start', Type.Float, None, 'Detector start position'],
