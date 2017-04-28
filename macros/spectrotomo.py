@@ -3,24 +3,6 @@ from sardana.macroserver.msexception import UnknownEnv
 from collectlib.spectrotomolib import SpectroTomo
 
 
-sample_pos_def = [['pos_x', Type.Float, None, 'Position of the X motor'],
-                  ['pos_y', Type.Float, None, 'Position of the Y motor'],
-                  ['pos_z', Type.Float, None, 'Position of the Z motor'],
-                  {'min': 1}]
-
-energy_zp_def = [['energy', Type.Float, None, 'Beam energy'],
-                 ['det_z', Type.Float, None, 'Detector Z position'],
-                 ['zp_z', Type.Float, None, 'ZonePlate Z position'],
-                 ['zp_step', Type.Float, 0, 'ZonePlate step'],
-                 ['exptime_FF', Type.Float, 1, 'FF Exposure time'],
-                 {'min': 1}]
-
-theta_def = [['theta_start', Type.Float, None, 'Theta start position'],
-             ['theta_end', Type.Float, None, 'Theta end position'],
-             ['theta_step', Type.Integer, 1, 'Theta step'],
-             ['exptime', Type.Float, 1, 'Exposure time'],
-             {'min': 1}]
-
 # name position in sample
 NAME = 0
 
@@ -63,22 +45,35 @@ class spectrotomobase(object):
             zp_limit_pos = self.getEnv("ZP_Z_limit_pos")
         except UnknownEnv:
             zp_limit_pos = float("Inf")
+
         self._verify_samples(samples, zp_limit_neg, zp_limit_pos)
-        tomos_obj = SpectroTomo(samples, filename)
-        tomos_obj.generate()
+        spectrotomo_obj = SpectroTomo(samples, filename)
+        spectrotomo_obj.generate()
 
 
 class spectrotomo(spectrotomobase, Macro):
 
+    energy_zp_def = [['energy', Type.Float, None, 'Beam energy'],
+                     ['det_z', Type.Float, None, 'Detector Z position'],
+                     ['zp_z', Type.Float, None, 'ZonePlate Z position'],
+                     ['zp_step', Type.Float, 0, 'ZonePlate step'],
+                     ['exptime_FF', Type.Float, 1, 'FF Exposure time'],
+                     {'min': 1}]
+
+    theta_def = [['theta_start', Type.Float, None, 'Theta start position'],
+                 ['theta_end', Type.Float, None, 'Theta end position'],
+                 ['theta_step', Type.Integer, 1, 'Theta step'],
+                 ['exptime', Type.Float, 1, 'Exposure time'],
+                 {'min': 1}]
+
     param_def = [
         ['samples', [['name', Type.String, None, 'Sample name'],
-                     ['sample_regions',  sample_pos_def, None, ('Regions of the'
-                                                                ' sample to be'
-                                                                ' imaged')],
+                     ['pos_x', Type.Float, None, 'Position of the X motor'],
+                     ['pos_y', Type.Float, None, 'Position of the Y motor'],
+                     ['pos_z', Type.Float, None, 'Position of the Z motor'],
                      ['theta_regions', theta_def, None, ('Regions for the'
                                                          'tilt sample '
                                                          'rotation')],
-
                      ['energy_regions', energy_zp_def, None, ('energy ZP '
                                                               'regions')],
 
