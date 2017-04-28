@@ -8,6 +8,7 @@ This module is used as a library for BL09 macros used for creating TXM scripts.
 
 """
 
+
 class GenericTXMcommands(object):
     """Generic TXM commands.
 
