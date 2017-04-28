@@ -3,17 +3,23 @@ from sardana.macroserver.msexception import UnknownEnv
 from collectlib.spectrotomolib import SpectroTomo
 
 
+sample_pos_def = [['pos_x', Type.Float, None, 'Position of the X motor'],
+                  ['pos_y', Type.Float, None, 'Position of the Y motor'],
+                  ['pos_z', Type.Float, None, 'Position of the Z motor'],
+                  {'min': 1}]
+
 energy_zp_def = [['energy', Type.Float, None, 'Beam energy'],
                  ['det_z', Type.Float, None, 'Detector Z position'],
                  ['zp_z', Type.Float, None, 'ZonePlate Z position'],
-                 ['zp_step', Type.Float, None, 'ZonePlate step'],
+                 ['zp_step', Type.Float, 0, 'ZonePlate step'],
+                 ['exptime_FF', Type.Float, 1, 'FF Exposure time'],
                  {'min': 1}]
 
-regions_def = [['start', Type.Float, None, 'Theta start position'],
-               ['end', Type.Float, None, 'Theta end position'],
-               ['theta_step', Type.Integer, 1, 'Theta step'],
-               ['exp_time', Type.Float, None, 'Exposure time'],
-               {'min': 1, 'max': 10}]
+theta_def = [['theta_start', Type.Float, None, 'Theta start position'],
+             ['theta_end', Type.Float, None, 'Theta end position'],
+             ['theta_step', Type.Integer, 1, 'Theta step'],
+             ['exptime', Type.Float, 1, 'Exposure time'],
+             {'min': 1}]
 
 # name position in sample
 NAME = 0
@@ -21,9 +27,12 @@ NAME = 0
 # energy_zp position in the macro parameters
 E_ZP_ZONES = 4
 
+
 class spectrotomobase(object):
-    """Generates TXM input file with commands to perform multi-sample tomo
-    measurements.
+    """Generate TXM input file for image data collection, to perform
+    spectral tomography measurements. Taking images at different energies
+    at each individual angle. This allows to keep the same sample position,
+    while changing energies.
     """
 
     def _verify_samples(self, samples, zp_limit_neg, zp_limit_pos):
@@ -63,21 +72,25 @@ class spectrotomo(spectrotomobase, Macro):
 
     param_def = [
         ['samples', [['name', Type.String, None, 'Sample name'],
-                     ['pos_x', Type.Float, None, 'Position of the X motor'],
-                     ['pos_y', Type.Float, None, 'Position of the Y motor'],
-                     ['pos_z', Type.Float, None, 'Position of the Z motor'],
-                     ['energy_zp', energy_zp_def, None, 'energy ZP zones'],
-                     ['sample_theta', regions_def, None, ('Regions of the'
-                                                          ' theta motor')],
+                     ['sample_regions',  sample_pos_def, None, ('Regions of the'
+                                                                ' sample to be'
+                                                                ' imaged')],
+                     ['theta_regions', theta_def, None, ('Regions for the'
+                                                         'tilt sample '
+                                                         'rotation')],
+
+                     ['energy_regions', energy_zp_def, None, ('energy ZP '
+                                                              'regions')],
+
+                     ['n_images', Type.Integer, 1, ('Number of images'
+                                                    ' per angle')],
                      ['ff_pos_x', Type.Float, None, ('Position of the X motor'
                                                      ' for the flat field'
                                                      ' acquisition')],
                      ['ff_pos_y', Type.Float, None, ('Position of the Y motor'
                                                      ' for the flat field'
-                                                     ' acquisition')],
-                     ['exp_time_ff', Type.Float, None, 'FF exposure time'],
-                     ['n_images', Type.Integer, 1, ('Number of images'
-                                                    ' per angle')]],
-            None, 'List of samples'],
+                                                     ' acquisition')]],
+         None, 'List of samples'],
+
         ['out_file', Type.Filename, None, 'Output file'],
     ]

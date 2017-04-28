@@ -3,54 +3,62 @@ import numpy as np
 from txmcommands import GenericTXMcommands
 
 NAME = 0
-POS_X = 1
-POS_Y = 2
-POS_Z = 3
-ENERGIES_ZP = 4
-ANGULAR_REGIONS = 5
-FF_POS_X = 6
-FF_POS_Y = 7
-EXP_TIME_FF = 8
-N_IMAGES = 9
+SAMPLE_REGIONS = 1
+THETA_REGIONS = 2
+ENERGY_REGIONS = 3
+N_IMAGES = 4
+FF_POS_X = 5
+FF_POS_Y = 6
 
-REGION_START = 0
-REGION_END = 1
-REGION_STEP = 2
-REGION_EXPTIME = 3
+POS_X = 0
+POS_Y = 1
+POS_Z = 2
+
+THETA_START = 0
+THETA_END = 1
+THETA_STEP = 2
+EXPTIME = 3
 
 ENERGY = 0
 DET_Z = 1
 ZP_Z = 2
 ZP_STEP = 3
+EXPTIME_FF = 4
 
-FILE_NAME = 'manytomos.txt'
+FILE_NAME = 'spectrotomo.txt'
 
 samples = [
     [
-        'sample1', # name
-        0, # pos x
-        0, # pos y
-        0, # pos z
-        [#energies and zoneplates
+        'sample1',  # name
+
+        [  # Regions in sample to be imaged
             [
-                100, # energy
-                20000, # detector Z position
-                50, # ZP Z central position
-                2 # ZP step
-            ]
-        ],
-        [# angular regions
-            [
-                -10, # start
-                10, # end
-                10, # theta step
-                1 #  integration time
+                -596.60,  # pos x
+                606.40,  # pos y
+                18.80,  # pos z
             ],
         ],
-        2, # flatfield position x
-        2, # flat field position y
-        1, # flat field exposure time
-        4, # num images
+        [  # angular regions
+            [
+                -10,  # start
+                10,  # end
+                10,  # theta step
+                2,  # exposure time
+            ],
+        ],
+        [  # energies and zoneplates
+            [
+                100,    # energy
+                20000,  # detector Z position
+                50,     # ZP Z central position
+                3,       # ZP step
+                2  # FF exposure time
+            ]
+        ],
+        2,   # num images
+        20,  # FlatField position X
+        30,  # FlatField position x
+
     ],
 
 ]
