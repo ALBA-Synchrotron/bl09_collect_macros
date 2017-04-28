@@ -83,6 +83,11 @@ class GenericTXMcommands(object):
         self.wait(5)
         self.moveEnergy(energy)
 
+    def go_to_energy_zp_det(self, energy, zp_z, det_z):
+        self.go_to_energy(energy)
+        self.moveZonePlateZ(zp_z)
+        self.moveDetector(det_z)
+
     def setExpTime(self, exp_time):
         self.destination.write('setexp %6.1f\n' % exp_time)
 
