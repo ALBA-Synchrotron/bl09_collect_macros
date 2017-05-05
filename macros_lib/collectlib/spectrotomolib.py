@@ -73,8 +73,8 @@ class SpectroTomo(GenericTXMcommands):
             theta = self.current_theta
         if energy is None:
             energy = self.current_energy
-        base_name = ('%s_%.1f_%.1f_%.1f' % (sample_name, theta,
-                                            zone_plate, energy))
+        base_name = ('%s_%.1f_%.1f_%.1f' % (sample_name, energy,
+                                            theta, zone_plate))
         extension = 'xrm'
         if (self._repetitions == 0 or self._repetitions == 1 or
                     self._repetitions is None):
