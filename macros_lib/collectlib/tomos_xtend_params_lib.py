@@ -17,46 +17,49 @@ REGION_START = 0
 REGION_END = 1
 REGION_STEP = 2
 REGION_EXPTIME = 3
+ZP_Z = 4
+ZP_STEP = 5
+NUM_ZPS = 6
 
 ENERGY = 0
 DET_Z = 1
-ZP_Z = 2
-ZP_STEP = 3
+
 
 FILE_NAME = 'manytomos.txt'
 
 samples = [
     [
-        'sample1', # name
-        0, # pos x
-        0, # pos y
-        0, # pos z
-        [#energies and zoneplates
+        'sample1',  # name
+        0,  # pos x
+        0,  # pos y
+        0,  # pos z
+        [  # energies and zoneplates
             [
-                100, # energy
-                20000, # detector Z position
-                50, # ZP Z central position
-                2 # ZP step
+                100,  # energy
+                20000,  # detector Z position
             ]
         ],
-        [# angular regions
+        [  # angular regions
             [
-                -10, # start
-                10, # end
-                10, # theta step
-                1 #  integration time
+                -10,  # start
+                10,  # end
+                10,  # theta step
+                1,  # integration time
+                50,  # ZP Z central position
+                0.2,  # ZP step
+                3,  # number of ZP positions
             ],
         ],
-        2, # flatfield position x
-        2, # flat field position y
-        1, # flat field exposure time
-        4, # num images
+        2,  # flat field position x
+        2,  # flat field position y
+        1,  # flat field exposure time
+        4,  # num images
     ],
 
 ]
 
 
-class ManyTomos(GenericTXMcommands):
+class TomosXtend(GenericTXMcommands):
 
     def __init__(self, samples=None, file_name=None):
         GenericTXMcommands.__init__(self, file_name=file_name)
@@ -93,12 +96,6 @@ class ManyTomos(GenericTXMcommands):
             det_z = e_zp_zone[DET_Z]
             self.moveDetector(det_z)
 
-            zp_central_pos = e_zp_zone[ZP_Z]
-            zp_step = e_zp_zone[ZP_STEP]
-            # Only one zp position used if zp_step is equal 0
-            if zp_step == 0:
-                self.moveZonePlateZ(zp_central_pos)
-
             self.go_to_sample_xyz_pos(sample[POS_X],
                                       sample[POS_Y],
                                       sample[POS_Z])
@@ -122,6 +119,14 @@ class ManyTomos(GenericTXMcommands):
                 positions = np.append(positions, end)
                 self.setExpTime(exp_time)
 
+                zp_central_pos = angular_region[ZP_Z]
+                zp_step = angular_region[ZP_STEP]
+                num_zps = angular_region[NUM_ZPS]
+
+                # Only one zp position used if zp_step is equal 0
+                if zp_step == 0:
+                    self.moveZonePlateZ(zp_central_pos)
+
                 # Acquisition of an image for each ZP, at each angle,
                 # at each Energy.
                 for theta in positions:
@@ -131,10 +136,9 @@ class ManyTomos(GenericTXMcommands):
                         self.collect()
                     # Multi-focus: Three ZP positions used.
                     else:
-                        zp_pos1 = zp_central_pos - zp_step
-                        zp_pos2 = zp_central_pos
-                        zp_pos3 = zp_central_pos + zp_step
-                        zone_plates = [zp_pos1, zp_pos2, zp_pos3]
+                        start = zp_central_pos - zp_step*(num_zps - 1)/2.0
+                        stop = zp_central_pos + zp_step*(num_zps - 1)/2.0
+                        zone_plates = np.linspace(start, stop, num_zps)
                         for zone_plate in zone_plates:
                             self.moveZonePlateZ(zone_plate)
                             self.collect()
