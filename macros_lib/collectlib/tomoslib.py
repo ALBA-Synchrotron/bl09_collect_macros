@@ -11,7 +11,8 @@ ANGULAR_REGIONS = 5
 FF_POS_X = 6
 FF_POS_Y = 7
 EXP_TIME_FF = 8
-N_IMAGES = 9
+N_FF_IMAGES = 9
+N_IMAGES = 10
 
 REGION_START = 0
 REGION_END = 1
@@ -50,6 +51,7 @@ samples = [
         2, # flatfield position x
         2, # flat field position y
         1, # flat field exposure time
+        10, # num FF images
         4, # num images
     ],
 
@@ -79,7 +81,7 @@ class ManyTomos(GenericTXMcommands):
             file_name = '%s.%s' % (base_name, extension)
             self.destination.write('collect %s\n' % file_name)
         else:
-            for repetition in range(1, self._repetitions+1):
+            for repetition in range(self._repetitions):
                 file_name = '%s_%d.%s' % (base_name, repetition, extension)
                 self.destination.write('collect %s\n' % file_name)
 
@@ -109,7 +111,7 @@ class ManyTomos(GenericTXMcommands):
 
             angular_regions = sample[ANGULAR_REGIONS]
             self._repetitions = sample[N_IMAGES]
-
+            
             for angular_region in angular_regions:
                 start = angular_region[REGION_START]
                 end = angular_region[REGION_END]
@@ -146,7 +148,7 @@ class ManyTomos(GenericTXMcommands):
                                      sample[FF_POS_Y])
             self.setExpTime(sample[EXP_TIME_FF])
             sample_name = '%s_%.1f' % (sample[NAME], energy)
-            for i in range(1,11):
+            for i in range(1, sample[N_FF_IMAGES]+1):
                 self.destination.write('collect %s_FF_%d.xrm\n' % (sample_name,
                                                                    i))
 

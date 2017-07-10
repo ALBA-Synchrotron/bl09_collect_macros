@@ -75,6 +75,7 @@ class manytomos(manytomosbase, Macro):
                                                      ' for the flat field'
                                                      ' acquisition')],
                      ['exp_time_ff', Type.Float, None, 'FF exposure time'],
+                     ['n_FF_images', Type.Integer, 10, 'Number of FF images'],
                      ['n_images', Type.Integer, 1, ('Number of images'
                                                     ' per angle')]],
             None, 'List of samples'],
