@@ -28,43 +28,51 @@ FILE_NAME = 'energyscan.txt'
 
 samples = [
     [ # sample with energies and zone plates
-        "20170321_toto", # name
+        "toto", # name
         [# Regions in sample to be imaged
             [ 
-            -596.60, # pos x
-            606.40, # pos y
-            18.80, # pos z
+            0, # pos x
+            0, # pos y
+            0, # pos z
             ],
         ],
         [ # energy regions
             [
-                340.0,  
-                343.0, 
-                1, 
-                10,
-                8,
+                515.0,  
+                525.0, 
+                0.2, 
+                1,
+                1,
             ],
             [
-                343.5, 
-                353.5, 
-                0.5, 
-                10,
-                8,
+                525.4, 
+                534.3, 
+                0.1, 
+                1,
+                1,
             ],
             [
-                354.5, 
-                360.5, 
-                1, 
-                10,
-                8,
+                534.5, 
+                544.7, 
+                0.2, 
+                1,
+                1,
+            ],
+            [
+                545.0, 
+                580.0, 
+                1.0, 
+                1,
+                1,
             ],
         ],
-        -11627.3,
-        -11504.0,
-        -1913.7,
-        -1792.5,
-        -91.00, # flatfield position x
-        -222.00 # flat field position y
+        -10143.1,
+        -9827.8,
+        -1103.0,
+        -787.8,
+        1.0, # flatfield position x
+        1.0, # flat field position y
+        1 # flat field position y
     ]
 ]
 
@@ -74,6 +82,7 @@ class EnergyScan(GenericTXMcommands):
         self.samples = samples
         self.file_name = file_name
         self._repetitions = None
+        self.resolution = 0.1
 
     def collect_escan(self, sample):
 
@@ -89,25 +98,24 @@ class EnergyScan(GenericTXMcommands):
         last_energy = end_energy_region[E_END]
 
         # Total number of steps of 0.1 electronvolts in the total energy range
-        resolution = 0.1
-        small_steps = int(round((last_energy - first_energy) / resolution))
+        num_small_steps = round((last_energy - first_energy) / self.resolution)
 
         # Counter of steps of 0.1 electronvolts in Energy
         counter_small_steps = 0
 
-        # start zp and detector positions
-        zp_start = sample[ZP_START]
-        det_start = sample[DET_START]
-
-        # end zp and detector positions
+        # zp start and end positions
+        zp_start_global = zp_start = sample[ZP_START]
         zp_end = sample[ZP_END]
+
+        # detector start and end positions
+        det_start_global = det_start = sample[DET_START]
         det_end = sample[DET_END]
 
-        # zp and detector small steps. 
-        # It is the step if the energy was increased by the resolution factor.
-        zp_step_resolution = (zp_end - zp_start) / small_steps
-        det_step_resolution = (det_end - det_start) / small_steps
-
+        # zp and detector small steps: 
+        # the step if the energy was increased by the resolution factor.
+        zp_step_resolution = (zp_end - zp_start) / num_small_steps
+        det_step_resolution = (det_end - det_start) / num_small_steps
+        
         # Images to be collected for each angle position
         self._repetitions = sample[N_IMAGES]
 
@@ -121,26 +129,33 @@ class EnergyScan(GenericTXMcommands):
             e_start = energy_region[E_START]
             e_end = energy_region[E_END]
             e_step = energy_region[E_STEP]
-            energies = np.arange(e_start, e_end, e_step)
-            energies = np.append(energies, e_end)
-
-            # Fixed increment of step counts in each range
+        
+        
+            n_small_step_in_Eregion = (e_end - e_start) / self.resolution
             # Number of steps of 0.1eV in a single Energy step
-            increment_step_counts = int(round(e_step / resolution))
-            for i in range(len(energies)):
+            num_small_steps_in_energy_step = round(e_step / self.resolution)
+                                
+            zp_step = zp_step_resolution * num_small_steps_in_energy_step
+            det_step = det_step_resolution * num_small_steps_in_energy_step
+      
+            energies = np.linspace(e_start, e_end,
+                                   round((e_end - e_start) / e_step) +1)
 
-                counter_small_steps += increment_step_counts
-                if i == 0 and e_region_num == 0:      
-                    counter_small_steps = 0
+            if e_region_num != 0:
+                zp_start = zp_end_previous_Eregion + zp_step_resolution * (
+                    e_start - e_end_prevous_Eregion) / self.resolution
+                det_start = det_end_previous_Eregion + det_step_resolution * (
+                    e_start - e_end_prevous_Eregion) / self.resolution
+
+            zp_pos = zp_start
+            det_pos = det_start
+            
+            for count in range(len(energies)):
 
                 # Collect sample image
                 self.setExpTime(energy_region[EXP_TIME])
-                self.moveEnergy(energies[i])
-
-                zp_pos = zp_start + counter_small_steps*zp_step_resolution
+                self.moveEnergy(energies[count])
                 self.moveZonePlateZ(zp_pos)
-
-                det_pos = det_start + counter_small_steps*det_step_resolution
                 self.moveDetector(det_pos)
 
                 num_sample_positions = len(sample[SAMPLE_REGIONS])
@@ -154,13 +169,13 @@ class EnergyScan(GenericTXMcommands):
                 if self._repetitions == 1:
                     command = 'collect %s_%6.2f.xrm\n'
                     self.destination.write(command % (base_name, 
-                                                      energies[i]))
+                                                      energies[count]))
                 else:
-                    for repetition in range(0, self._repetitions):
+                    for repetition in range(self._repetitions):
                         command = 'collect %s_%6.2f_%s.xrm\n'
                         rep_str = str(repetition).zfill(3)
                         self.destination.write(command % (base_name, 
-                                                          energies[i], 
+                                                          energies[count], 
                                                           rep_str))
 
                 # Collect flatfield image
@@ -169,8 +184,18 @@ class EnergyScan(GenericTXMcommands):
                 self.moveY(sample[FF_POS_Y])
 
                 base_name = sample[NAME]
-                self.destination.write('collect %s_%6.2f_FF.xrm\n'%(base_name, 
-                                                                   energies[i]))
+                self.destination.write('collect %s_%6.2f_FF.xrm\n' % 
+                                       (base_name, energies[count]))
+
+                zp_pos += zp_step
+                det_pos += det_step
+                
+            zp_end_previous_Eregion = zp_start + (n_small_step_in_Eregion * 
+                                                  zp_step_resolution)
+            det_end_previous_Eregion = det_start + (n_small_step_in_Eregion * 
+                                                    det_step_resolution)
+            e_end_prevous_Eregion = e_end
+            
 
         ## Come back to initial positions
         self.moveX(start_x)
@@ -178,8 +203,8 @@ class EnergyScan(GenericTXMcommands):
         self.moveZ(start_z)
         self.setExpTime(energy_region[EXP_TIME])
         self.moveEnergy(first_energy)
-        self.moveZonePlateZ(zp_start)      
-        self.moveDetector(det_start)
+        self.moveZonePlateZ(zp_start_global)      
+        self.moveDetector(det_start_global)
 
     def collect_data(self):
         self.setBinning()
@@ -188,6 +213,7 @@ class EnergyScan(GenericTXMcommands):
             # wait 5 minutes between samples
             if len(self.samples) > 1:
                 self.wait(300)
+
 
 if __name__ == '__main__':
     energy_scan = EnergyScan(samples, FILE_NAME)
