@@ -28,7 +28,7 @@ FILE_NAME = 'energyscan.txt'
 
 samples = [
     [ # sample with energies and zone plates
-        "toto", # name
+        "20170913_toto", # name
         [# Regions in sample to be imaged
             [ 
             0, # pos x
@@ -167,12 +167,12 @@ class EnergyScan(GenericTXMcommands):
 
                 base_name = sample[NAME]
                 if self._repetitions == 1:
-                    command = 'collect %s_%6.2f.xrm\n'
+                    command = 'collect %s_0_%6.2f_0.xrm\n'
                     self.destination.write(command % (base_name, 
                                                       energies[count]))
                 else:
                     for repetition in range(self._repetitions):
-                        command = 'collect %s_%6.2f_%s.xrm\n'
+                        command = 'collect %s_0_%6.2f_0_%s.xrm\n'
                         rep_str = str(repetition).zfill(3)
                         self.destination.write(command % (base_name, 
                                                           energies[count], 
@@ -184,7 +184,7 @@ class EnergyScan(GenericTXMcommands):
                 self.moveY(sample[FF_POS_Y])
 
                 base_name = sample[NAME]
-                self.destination.write('collect %s_%6.2f_FF.xrm\n' % 
+                self.destination.write('collect %s_0_FF_%6.2f.xrm\n' % 
                                        (base_name, energies[count]))
 
                 zp_pos += zp_step
