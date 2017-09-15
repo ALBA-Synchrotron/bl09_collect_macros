@@ -1,6 +1,9 @@
+import h5py
 import numpy as np
 
+from txmcommands import HDF5_File
 from txmcommands import GenericTXMcommands
+
 
 NAME = 0
 POS_X = 1
@@ -56,6 +59,66 @@ samples = [
     ],
 
 ]
+
+
+class Validator(object):
+    """Verification that the ZP positions are inside the accepted range"""
+
+    def __init__(self):
+        pass
+
+    def verify_samples(self, samples, zp_limit_neg, zp_limit_pos):
+        for sample in samples:
+            for counter, e_zp_zone in enumerate(sample[ENERGIES_ZP]):
+                zp_central_pos = e_zp_zone[2]
+                zp_step = e_zp_zone[3]
+                if zp_step == 0:
+                    zp_positions = [zp_central_pos]
+                else:
+                    zp_pos_1 = zp_central_pos - zp_step
+                    zp_pos_2 = zp_central_pos
+                    zp_pos_3 = zp_central_pos + zp_step
+                    zp_positions = [zp_pos_1, zp_pos_2, zp_pos_3]
+                for zp_position in zp_positions:
+                    if zp_position < zp_limit_neg or \
+                                    zp_position > zp_limit_pos:
+                        msg = ("The sample {0} has the zone_plate {1} out of"
+                               " range. The accepted range is from %s to"
+                               " %s um.") % (zp_limit_neg, zp_limit_pos)
+                        raise ValueError(msg.format(sample[NAME], counter+1))
+
+
+class HDF5_ManyTomos_Factory(object):
+
+    def __init__(self, samples=None):
+        self.samples = samples
+
+    def create_hdf5_files(self):
+        hdf5_file_list = []
+
+        for sample in self.samples:
+            sample_name = sample[NAME]
+            for e_zp_zone in sample[ENERGIES_ZP]:
+                energy = e_zp_zone[0]
+                zp_central_pos = e_zp_zone[2]
+                zp_step = e_zp_zone[3]
+                if zp_step == 0:
+                    zp_positions = [zp_central_pos]
+                else:
+                    zp_pos_1 = zp_central_pos - zp_step
+                    zp_pos_2 = zp_central_pos
+                    zp_pos_3 = zp_central_pos + zp_step
+                    zp_positions = [zp_pos_1, zp_pos_2, zp_pos_3]
+
+                for zp in zp_positions:
+                    filename_hdf5 = sample_name + "_" + str(energy) + "_" +\
+                                    str(zp) + ".hdf5"
+                    print("Created hdf5 structure for:" + filename_hdf5)
+                    hdf5_file_obj = HDF5_File(filename_hdf5)
+                    hdf5_file_list.append(hdf5_file_obj)
+
+            for hdf5_file_obj in hdf5_file_list:
+                hdf5_file_obj.create_main_entry("NXtomo")
 
 
 class ManyTomos(GenericTXMcommands):

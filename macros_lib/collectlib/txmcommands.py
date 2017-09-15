@@ -1,12 +1,25 @@
 # -*- coding: utf-8 -*-
 
 import sys
-
+import h5py
 
 """
 This module is used as a library for BL09 macros used for creating TXM scripts.
 
 """
+
+
+class HDF5_File(object):
+    """Class used to create the hdf5 structure"""
+
+    def __init__(self, filename_hdf5):
+        self.filename_hdf5 = filename_hdf5
+        self.hdf_file = h5py.File(self.filename_hdf5, 'w')
+        self.nxentry = 0
+
+    def create_main_entry(self, entry_name):
+        self.nxentry = self.hdf_file.create_group(entry_name)
+        self.nxentry.attrs['NX_class'] = "NXentry"
 
 
 class GenericTXMcommands(object):

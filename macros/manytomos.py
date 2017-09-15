@@ -1,5 +1,7 @@
 from sardana.macroserver.macro import Macro, Type
 from sardana.macroserver.msexception import UnknownEnv
+from collectlib.tomoslib import Validator
+from collectlib.tomoslib import HDF5_ManyTomos_Factory
 from collectlib.tomoslib import ManyTomos
 
 energy_zp_def = [['energy', Type.Float, None, 'Beam energy'],
@@ -14,35 +16,11 @@ regions_def = [['start', Type.Float, None, 'Theta start position'],
                ['exp_time', Type.Float, None, 'Exposure time'],
                {'min': 1, 'max': 10}]
 
-# name position in sample
-NAME = 0
-
-# energy_zp position in the macro parameters
-E_ZP_ZONES = 4
 
 class manytomosbase(object):
     """Generates TXM input file with commands to perform multi-sample tomo
     measurements.
     """
-
-    def _verify_samples(self, samples, zp_limit_neg, zp_limit_pos):
-        for sample in samples:
-            for counter, e_zp_zone in enumerate(sample[E_ZP_ZONES]):
-                zp_central_pos = e_zp_zone[2]
-                zp_step = e_zp_zone[3]
-                if zp_step == 0:
-                    zp_positions = [zp_central_pos]
-                else:
-                    zp_pos_1 = zp_central_pos - zp_step
-                    zp_pos_2 = zp_central_pos
-                    zp_pos_3 = zp_central_pos + zp_step
-                    zp_positions = [zp_pos_1, zp_pos_2, zp_pos_3]
-                for zp_position in zp_positions:
-                    if zp_position < zp_limit_neg or zp_position > zp_limit_pos:
-                        msg = ("The sample {0} has the zone_plate {1} out of"
-                               " range. The accepted range is from %s to"
-                               " %s um.") % (zp_limit_neg, zp_limit_pos)
-                        raise ValueError(msg.format(sample[NAME], counter+1))
 
     def run(self, samples, filename):
         try:
@@ -53,7 +31,11 @@ class manytomosbase(object):
             zp_limit_pos = self.getEnv("ZP_Z_limit_pos")
         except UnknownEnv:
             zp_limit_pos = float("Inf")
-        self._verify_samples(samples, zp_limit_neg, zp_limit_pos)
+
+        validator_obj = Validator()
+        validator_obj.verify_samples(samples, zp_limit_neg, zp_limit_pos)
+        hdf5_files_factory = HDF5_ManyTomos_Factory(samples)
+        hdf5_files_factory.create_hdf5_files()
         tomos_obj = ManyTomos(samples, filename)
         tomos_obj.generate()
 
