@@ -112,9 +112,7 @@ class TomosXtend(GenericTXMcommands):
                 end = angular_region[REGION_END]
                 angle_step = angular_region[REGION_STEP]
                 exp_time = angular_region[REGION_EXPTIME]
-                
-                
-                #assert start != end, "Region start must be different than end"
+
                 if end - start < 1:
                     angle_step *= -1
                 if start == end:
