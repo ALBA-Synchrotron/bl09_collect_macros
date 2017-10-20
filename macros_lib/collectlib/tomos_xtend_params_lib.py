@@ -101,7 +101,7 @@ class TomosXtend(GenericTXMcommands):
                                       sample[POS_Z])
 
             # move theta to the min angle, in order to avoid backlash
-            self.moveTheta(-71.0)
+            self.moveTheta(-70.1)
             self.wait(10)
 
             angular_regions = sample[ANGULAR_REGIONS]
@@ -112,11 +112,16 @@ class TomosXtend(GenericTXMcommands):
                 end = angular_region[REGION_END]
                 angle_step = angular_region[REGION_STEP]
                 exp_time = angular_region[REGION_EXPTIME]
-                assert start != end, "Region start must be different than end"
+                
+                
+                #assert start != end, "Region start must be different than end"
                 if end - start < 1:
                     angle_step *= -1
-                positions = np.arange(start, end, angle_step)
-                positions = np.append(positions, end)
+                if start == end:
+                    positions = np.array([start])
+                else:
+                    positions = np.arange(start, end, angle_step)
+                    positions = np.append(positions, end)
                 self.setExpTime(exp_time)
 
                 zp_central_pos = angular_region[ZP_Z]
