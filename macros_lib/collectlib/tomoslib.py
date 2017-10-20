@@ -117,11 +117,14 @@ class ManyTomos(GenericTXMcommands):
                 end = angular_region[REGION_END]
                 angle_step = angular_region[REGION_STEP]
                 exp_time = angular_region[REGION_EXPTIME]
-                assert start != end, "Region start must be different than end"
                 if end - start < 1:
                     angle_step *= -1
-                positions = np.arange(start, end, angle_step)
-                positions = np.append(positions, end)
+                if start == end:
+                    positions = np.array([start])
+                else:
+                    positions = np.arange(start, end, angle_step)
+                    positions = np.append(positions, end)
+
                 self.setExpTime(exp_time)
 
                 # Acquisition of an image for each ZP, at each angle,
