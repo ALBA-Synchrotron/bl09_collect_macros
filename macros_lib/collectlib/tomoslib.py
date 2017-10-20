@@ -106,7 +106,7 @@ class ManyTomos(GenericTXMcommands):
                                       sample[POS_Z])
 
             # move theta to the min angle, in order to avoid backlash
-            self.moveTheta(-71.0)
+            self.moveTheta(-70.1)
             self.wait(10)
 
             angular_regions = sample[ANGULAR_REGIONS]
