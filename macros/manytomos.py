@@ -1,42 +1,46 @@
+import numpy as np
+
 from sardana.macroserver.macro import Macro, Type
 from sardana.macroserver.msexception import UnknownEnv
 from collectlib.tomoslib import ManyTomos
 
 energy_zp_def = [['energy', Type.Float, None, 'Beam energy'],
                  ['det_z', Type.Float, None, 'Detector Z position'],
-                 ['zp_z', Type.Float, None, 'ZonePlate Z position'],
-                 ['zp_step', Type.Float, None, 'ZonePlate step'],
                  {'min': 1}]
 
 regions_def = [['start', Type.Float, None, 'Theta start position'],
                ['end', Type.Float, None, 'Theta end position'],
                ['theta_step', Type.Integer, 1, 'Theta step'],
                ['exp_time', Type.Float, None, 'Exposure time'],
-               {'min': 1, 'max': 10}]
+               ['zp_z', Type.Float, None, 'ZonePlate Z position'],
+               ['zp_step', Type.Float, 0, 'ZonePlate step'],
+               ['num_zps', Type.Float, 1, 'Number of ZonePlate positions'],
+               {'min': 1, 'max': 200}]
 
 # name position in sample
 NAME = 0
 
-# energy_zp position in the macro parameters
-E_ZP_ZONES = 4
+# angular regions position in the macro parameters
+ANGULAR_REGIONS = 5
+
 
 class manytomosbase(object):
-    """Generates TXM input file with commands to perform multi-sample tomo
-    measurements.
+    """Generates a TXM input file with commands to perform multi-sample tomo
+    data collection using the XMController Microscope Software.
     """
 
     def _verify_samples(self, samples, zp_limit_neg, zp_limit_pos):
         for sample in samples:
-            for counter, e_zp_zone in enumerate(sample[E_ZP_ZONES]):
-                zp_central_pos = e_zp_zone[2]
-                zp_step = e_zp_zone[3]
+            for counter, angular_region in enumerate(sample[ANGULAR_REGIONS]):
+                zp_central_pos = angular_region[4]
+                zp_step = angular_region[5]
+                num_zps = angular_region[6]
                 if zp_step == 0:
                     zp_positions = [zp_central_pos]
                 else:
-                    zp_pos_1 = zp_central_pos - zp_step
-                    zp_pos_2 = zp_central_pos
-                    zp_pos_3 = zp_central_pos + zp_step
-                    zp_positions = [zp_pos_1, zp_pos_2, zp_pos_3]
+                    start = zp_central_pos - zp_step * (num_zps - 1) / 2.0
+                    stop = zp_central_pos + zp_step * (num_zps - 1) / 2.0
+                    zp_positions = np.linspace(start, stop, num_zps)
                 for zp_position in zp_positions:
                     if zp_position < zp_limit_neg or zp_position > zp_limit_pos:
                         msg = ("The sample {0} has the zone_plate {1} out of"
