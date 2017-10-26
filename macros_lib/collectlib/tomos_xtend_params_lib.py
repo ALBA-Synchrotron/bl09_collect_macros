@@ -82,7 +82,7 @@ class TomosXtend(GenericTXMcommands):
             file_name = '%s.%s' % (base_name, extension)
             self.destination.write('collect %s\n' % file_name)
         else:
-            for repetition in range(1, self._repetitions+1):
+            for repetition in range(self._repetitions):
                 file_name = '%s_%d.%s' % (base_name, repetition, extension)
                 self.destination.write('collect %s\n' % file_name)
 
