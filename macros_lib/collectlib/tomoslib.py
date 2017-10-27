@@ -157,8 +157,8 @@ class ManyTomos(GenericTXMcommands):
             self.setExpTime(sample[EXP_TIME_FF])
             sample_name = '%s_%.1f' % (sample[NAME], energy)
             for i in range(1, sample[N_FF_IMAGES]+1):
-                self.destination.write('collect %s_FF_%d.xrm\n' % (sample_name,
-                                                                   i))
+                self.destination.write('collect %s_FF_%d.xrm\n' %
+                                       (sample_name, i))
 
     def collect_data(self):
         self.setBinning()
