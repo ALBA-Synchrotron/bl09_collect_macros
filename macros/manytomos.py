@@ -42,7 +42,8 @@ class manytomosbase(object):
                     stop = zp_central_pos + zp_step * (num_zps - 1) / 2.0
                     zp_positions = np.linspace(start, stop, num_zps)
                 for zp_position in zp_positions:
-                    if zp_position < zp_limit_neg or zp_position > zp_limit_pos:
+                    if (zp_position < zp_limit_neg or 
+                            zp_position > zp_limit_pos):
                         msg = ("The sample {0} has the zone_plate {1} out of"
                                " range. The accepted range is from %s to"
                                " %s um.") % (zp_limit_neg, zp_limit_pos)
