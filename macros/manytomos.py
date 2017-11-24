@@ -18,16 +18,33 @@ regions_def = [['start', Type.Float, None, 'Theta start position'],
                {'min': 1, 'max': 200}]
 
 # name position in sample
-NAME = 0
+DATE = 0
+NAME = 1
 
 # angular regions position in the macro parameters
-ANGULAR_REGIONS = 5
+ANGULAR_REGIONS = 6
 
 
 class manytomosbase(object):
     """Generates a TXM input file with commands to perform multi-sample tomo
     data collection using the XMController Microscope Software.
     """
+
+    def _verify_dates_names(self, samples):
+        for sample in samples:
+            sample_date = sample[DATE]
+            sample_name = sample[NAME]
+            if "_" in sample_date:
+                msg = ("Date must be given in YYYYMMDD format. "
+                       "It cannot contain underscore characters ('_'). "
+                       "Please modify date '{0}' by a suitably formatted "
+                       "date without underscores")
+                raise ValueError(msg.format(sample_date))
+            if "_" in sample_name:
+                msg = ("Sample name must not contain underscore "
+                       "characters ('_'). Please, modify sample name '{0}' "
+                       "by suitably formatted name without underscores.")
+                raise ValueError(msg.format(sample_name))
 
     def _verify_samples(self, samples, zp_limit_neg, zp_limit_pos):
         for sample in samples:
@@ -47,7 +64,8 @@ class manytomosbase(object):
                         msg = ("The sample {0} has the zone_plate {1} out of"
                                " range. The accepted range is from %s to"
                                " %s um.") % (zp_limit_neg, zp_limit_pos)
-                        raise ValueError(msg.format(sample[NAME], counter+1))
+                        date_name = sample[DATE] + sample[NAME]
+                        raise ValueError(msg.format(date_name, counter+1))
 
     def run(self, samples, filename):
         try:
@@ -58,6 +76,7 @@ class manytomosbase(object):
             zp_limit_pos = self.getEnv("ZP_Z_limit_pos")
         except UnknownEnv:
             zp_limit_pos = float("Inf")
+        self._verify_dates_names(samples)
         self._verify_samples(samples, zp_limit_neg, zp_limit_pos)
         tomos_obj = ManyTomos(samples, filename)
         tomos_obj.generate()
@@ -66,7 +85,8 @@ class manytomosbase(object):
 class manytomos(manytomosbase, Macro):
 
     param_def = [
-        ['samples', [['name', Type.String, None, 'Sample name'],
+        ['samples', [['date', Type.String, None, 'Sample date: YYYYMMDD'],
+                     ['name', Type.String, None, 'Sample name'],
                      ['pos_x', Type.Float, None, 'Position of the X motor'],
                      ['pos_y', Type.Float, None, 'Position of the Y motor'],
                      ['pos_z', Type.Float, None, 'Position of the Z motor'],

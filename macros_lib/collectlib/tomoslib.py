@@ -2,18 +2,18 @@ import numpy as np
 
 from txmcommands import GenericTXMcommands
 
-
-NAME = 0
-POS_X = 1
-POS_Y = 2
-POS_Z = 3
-ENERGIES_ZP = 4
-ANGULAR_REGIONS = 5
-FF_POS_X = 6
-FF_POS_Y = 7
-EXP_TIME_FF = 8
-N_FF_IMAGES = 9
-N_IMAGES = 10
+DATE = 0
+NAME = 1
+POS_X = 2
+POS_Y = 3
+POS_Z = 4
+ENERGIES_ZP = 5
+ANGULAR_REGIONS = 6
+FF_POS_X = 7
+FF_POS_Y = 8
+EXP_TIME_FF = 9
+N_FF_IMAGES = 10
+N_IMAGES = 11
 
 REGION_START = 0
 REGION_END = 1
@@ -31,6 +31,7 @@ FILE_NAME = 'manytomos.txt'
 
 samples = [
     [
+        '20171124'  # date
         'sample1',  # name
         0,  # pos x
         0,  # pos y
@@ -67,18 +68,14 @@ class ManyTomos(GenericTXMcommands):
         GenericTXMcommands.__init__(self, file_name=file_name)
         self.samples = samples
 
-    def collect(self, sample_name=None, zone_plate=None,
-                theta=None, energy=None):
-        if sample_name is None:
-            sample_name = self.current_sample_name
-        if zone_plate is None:
-            zone_plate = self.current_zone_plate
-        if theta is None:
-            theta = self.current_theta
-        if energy is None:
-            energy = self.current_energy
-        base_name = ('%s_%.1f_%.1f_%.1f' % (sample_name, energy,
-                                            theta, zone_plate))
+    def collect(self, sample_date="20171124"):
+        sample_date = sample_date
+        sample_name = self.current_sample_name
+        zone_plate = self.current_zone_plate
+        theta = self.current_theta
+        energy = self.current_energy
+        base_name = ('%s_%s_%.1f_%.1f_%.1f' % (sample_date, sample_name,
+                                               energy, theta, zone_plate))
         extension = 'xrm'
         if self._repetitions == 1 or self._repetitions is None:
             file_name = '%s.%s' % (base_name, extension)
@@ -90,6 +87,7 @@ class ManyTomos(GenericTXMcommands):
 
     def collect_sample(self, sample):
         for e_zp_zone in sample[ENERGIES_ZP]:
+            current_date = sample[DATE]
             self.current_sample_name = sample[NAME]
 
             energy = e_zp_zone[ENERGY]
@@ -139,7 +137,7 @@ class ManyTomos(GenericTXMcommands):
                     self.moveTheta(theta)
                     # Single-focus
                     if zp_step == 0:
-                        self.collect()
+                        self.collect(sample_date=current_date)
                     # Multi-focus: Three ZP positions used.
                     else:
                         start = zp_central_pos - zp_step*(num_zps - 1)/2.0
@@ -147,7 +145,7 @@ class ManyTomos(GenericTXMcommands):
                         zone_plates = np.linspace(start, stop, num_zps)
                         for zone_plate in zone_plates:
                             self.moveZonePlateZ(zone_plate)
-                            self.collect()
+                            self.collect(sample_date=current_date)
 
             # Execute flat field acquisitions #
             # move theta to 0 degrees - necessary for flat field measurement
@@ -155,7 +153,9 @@ class ManyTomos(GenericTXMcommands):
             self.go_to_sample_xy_pos(sample[FF_POS_X],
                                      sample[FF_POS_Y])
             self.setExpTime(sample[EXP_TIME_FF])
-            sample_name = '%s_%.1f' % (sample[NAME], energy)
+            sample_name = '%s_%s_%.1f' % (current_date,
+                                          self.current_sample_name,
+                                          energy)
             for i in range(sample[N_FF_IMAGES]):
                 self.destination.write('collect %s_FF_%d.xrm\n' %
                                        (sample_name, i))
