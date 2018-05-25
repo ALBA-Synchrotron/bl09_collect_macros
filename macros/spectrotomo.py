@@ -7,7 +7,7 @@ from collectlib.spectrotomolib import SpectroTomo
 NAME = 0
 
 # energy_zp position in the macro parameters
-E_ZP_ZONES = 4
+E_ZP_ZONES = 5
 
 
 class spectrotomobase(object):
