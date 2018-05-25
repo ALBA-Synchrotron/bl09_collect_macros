@@ -4,10 +4,11 @@ from collectlib.spectrotomolib import SpectroTomo
 
 
 # name position in sample
-NAME = 0
+DATE = 0
+NAME = 1
 
 # energy_zp position in the macro parameters
-E_ZP_ZONES = 5
+E_ZP_ZONES = 6
 
 
 class spectrotomobase(object):
@@ -16,6 +17,22 @@ class spectrotomobase(object):
     at each individual angle. This allows to keep the same sample position,
     while changing energies.
     """
+
+    def _verify_dates_names(self, samples):
+        for sample in samples:
+            sample_date = sample[DATE]
+            sample_name = sample[NAME]
+            if "_" in sample_date:
+                msg = ("Date must be given in YYYYMMDD format. "
+                       "It cannot contain underscore characters ('_'). "
+                       "Please modify date '{0}' by a suitably formatted "
+                       "date without underscores")
+                raise ValueError(msg.format(sample_date))
+            if "_" in sample_name:
+                msg = ("Sample name must not contain underscore "
+                       "characters ('_'). Please, modify sample name '{0}' "
+                       "by suitably formatted name without underscores.")
+                raise ValueError(msg.format(sample_name))
 
     def _verify_samples(self, samples, zp_limit_neg, zp_limit_pos):
         for sample in samples:
@@ -34,7 +51,8 @@ class spectrotomobase(object):
                         msg = ("The sample {0} has the zone_plate {1} out of"
                                " range. The accepted range is from %s to"
                                " %s um.") % (zp_limit_neg, zp_limit_pos)
-                        raise ValueError(msg.format(sample[NAME], zp_position))
+                        date_name = sample[DATE] + sample[NAME]
+                        raise ValueError(msg.format(date_name, zp_position))
 
     def run(self, samples, filename):
         try:
@@ -45,7 +63,7 @@ class spectrotomobase(object):
             zp_limit_pos = self.getEnv("ZP_Z_limit_pos")
         except UnknownEnv:
             zp_limit_pos = float("Inf")
-
+        self._verify_dates_names(samples)
         self._verify_samples(samples, zp_limit_neg, zp_limit_pos)
         spectrotomo_obj = SpectroTomo(samples, filename)
         spectrotomo_obj.generate()
@@ -67,7 +85,8 @@ class spectrotomo(spectrotomobase, Macro):
                  {'min': 1}]
 
     param_def = [
-        ['samples', [['name', Type.String, None, 'Sample name'],
+        ['samples', [['date', Type.String, None, 'Sample date: YYYYMMDD'],
+                     ['name', Type.String, None, 'Sample name'],
                      ['pos_x', Type.Float, None, 'Position of the X motor'],
                      ['pos_y', Type.Float, None, 'Position of the Y motor'],
                      ['pos_z', Type.Float, None, 'Position of the Z motor'],

@@ -24,10 +24,11 @@ class GenericTXMcommands(object):
     - X perpendicular to Y and Z.
     """
 
-    def __init__(self, file_name=None, current_sample_name=None,
-                 current_zone_plate=None, current_theta=None,
-                 current_energy=None, repetitions=None):
+    def __init__(self, file_name=None, current_sample_date=None,
+                 current_sample_name=None, current_zone_plate=None,
+                 current_theta=None, current_energy=None, repetitions=None):
         self.file_name = file_name
+        self.current_sample_date = current_sample_date
         self.current_sample_name = current_sample_name
         self.current_zone_plate = current_zone_plate
         self.current_theta = current_theta

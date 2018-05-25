@@ -2,16 +2,17 @@ import numpy as np
 
 from txmcommands import GenericTXMcommands
 
-NAME = 0
-POS_X = 1
-POS_Y = 2
-POS_Z = 3
-THETA_REGIONS = 4
-ENERGY_REGIONS = 5
-N_IMAGES = 6
-FF_POS_X = 7
-FF_POS_Y = 8
-N_FF_IMAGES = 9
+DATE = 0
+NAME = 1
+POS_X = 2
+POS_Y = 3
+POS_Z = 4
+THETA_REGIONS = 5
+ENERGY_REGIONS = 6
+N_IMAGES = 7
+FF_POS_X = 8
+FF_POS_Y = 9
+N_FF_IMAGES = 10
 
 THETA_START = 0
 THETA_END = 1
@@ -28,6 +29,7 @@ FILE_NAME = 'spectrotomo.txt'
 
 samples = [
     [
+        '20171124'  # date
         'sample1',  # name
         -596.60,  # pos x
         606.40,  # pos y
@@ -64,8 +66,10 @@ class SpectroTomo(GenericTXMcommands):
         GenericTXMcommands.__init__(self, file_name=file_name)
         self.samples = samples
 
-    def collect(self, sample_name=None, zone_plate=None,
+    def collect(self, sample_date=None, sample_name=None, zone_plate=None,
                 theta=None, energy=None):
+        if sample_date is None:
+            sample_date = self.current_sample_date
         if sample_name is None:
             sample_name = self.current_sample_name
         if zone_plate is None:
@@ -74,8 +78,8 @@ class SpectroTomo(GenericTXMcommands):
             theta = self.current_theta
         if energy is None:
             energy = self.current_energy
-        base_name = ('%s_%.1f_%.1f_%.1f' % (sample_name, energy,
-                                            theta, zone_plate))
+        base_name = ('%s_%s_%.1f_%.1f_%.1f' % (sample_date, sample_name,
+                                               energy, theta, zone_plate))
         extension = 'xrm'
         if (self._repetitions == 0 or self._repetitions == 1 or
                     self._repetitions is None):
@@ -87,7 +91,7 @@ class SpectroTomo(GenericTXMcommands):
                 self.destination.write('collect %s\n' % file_name)
 
     def collect_sample(self, sample):
-
+        self.current_sample_date = sample[DATE]
         self.current_sample_name = sample[NAME]
         self.go_to_sample_xyz_pos(sample[POS_X],
                                   sample[POS_Y],
