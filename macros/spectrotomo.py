@@ -84,7 +84,8 @@ class spectrotomo(spectrotomobase, Macro):
                                                      ' acquisition')],
                      ['ff_pos_y', Type.Float, None, ('Position of the Y motor'
                                                      ' for the flat field'
-                                                     ' acquisition')]],
+                                                     ' acquisition')],
+                     ['n_FF_images', Type.Integer, 10, 'Number of FF images']],
          None, 'List of samples'],
 
         ['out_file', Type.Filename, None, 'Output file'],

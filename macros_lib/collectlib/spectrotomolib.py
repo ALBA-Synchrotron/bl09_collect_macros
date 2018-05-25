@@ -11,6 +11,7 @@ ENERGY_REGIONS = 5
 N_IMAGES = 6
 FF_POS_X = 7
 FF_POS_Y = 8
+N_FF_IMAGES = 9
 
 THETA_START = 0
 THETA_END = 1
@@ -51,7 +52,7 @@ samples = [
         2,   # num images
         20,  # FlatField position X
         30,  # FlatField position x
-
+        10,  # num FF images
     ],
 
 ]
@@ -152,7 +153,7 @@ class SpectroTomo(GenericTXMcommands):
             self.setExpTime(e_zp_zone[EXPTIME_FF])
             self.go_to_energy_zp_det(energy, zp_central_pos, det_z)
             sample_name = '%s_%.1f' % (sample[NAME], energy)
-            for i in range(1,11):
+            for i in range(sample[N_FF_IMAGES]):
                 self.destination.write('collect %s_FF_%d.xrm\n' %
                                        (sample_name, i))
 
