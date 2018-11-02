@@ -158,6 +158,8 @@ class EnergyScan(GenericTXMcommands):
                 self.moveZonePlateZ(zp_pos)
                 self.moveDetector(det_pos)
 
+                base_name = sample[NAME]
+                
                 num_sample_positions = len(sample[SAMPLE_REGIONS])
                 for sample_pos_num in range (num_sample_positions):
                     sample_region = sample[SAMPLE_REGIONS][sample_pos_num]
@@ -165,18 +167,20 @@ class EnergyScan(GenericTXMcommands):
                     self.moveY(sample_region[POS_Y])
                     self.moveZ(sample_region[POS_Z])
 
-                base_name = sample[NAME]
-                if self._repetitions == 1:
-                    command = 'collect %s_0_%6.2f_0.xrm\n'
-                    self.destination.write(command % (base_name, 
-                                                      energies[count]))
-                else:
-                    for repetition in range(self._repetitions):
-                        command = 'collect %s_0_%6.2f_0_%s.xrm\n'
-                        rep_str = str(repetition).zfill(3)
+                    if self._repetitions == 1:
+                        command = 'collect %s_%d_%6.2f_0.xrm\n'
                         self.destination.write(command % (base_name, 
-                                                          energies[count], 
-                                                          rep_str))
+                                                          sample_pos_num,
+                                                          energies[count]))
+                    else:
+                        for repetition in range(self._repetitions):
+                            command = 'collect %s_%d_%6.2f_0_%s.xrm\n'
+                            rep_str = str(repetition).zfill(3)
+                            self.destination.write(command % 
+                                                    (base_name,
+                                                     sample_pos_num,
+                                                     energies[count],
+                                                     rep_str))
 
                 # Collect flatfield image
                 self.setExpTime(energy_region[EXP_TIME_FF])
