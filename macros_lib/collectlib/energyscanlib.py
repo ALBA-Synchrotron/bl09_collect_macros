@@ -100,9 +100,6 @@ class EnergyScan(GenericTXMcommands):
         # Total number of steps of 0.1 electronvolts in the total energy range
         num_small_steps = round((last_energy - first_energy) / self.resolution)
 
-        # Counter of steps of 0.1 electronvolts in Energy
-        counter_small_steps = 0
-
         # zp start and end positions
         zp_start_global = zp_start = sample[ZP_START]
         zp_end = sample[ZP_END]
@@ -129,8 +126,7 @@ class EnergyScan(GenericTXMcommands):
             e_start = energy_region[E_START]
             e_end = energy_region[E_END]
             e_step = energy_region[E_STEP]
-        
-        
+
             n_small_step_in_Eregion = (e_end - e_start) / self.resolution
             # Number of steps of 0.1eV in a single Energy step
             num_small_steps_in_energy_step = round(e_step / self.resolution)
@@ -143,9 +139,9 @@ class EnergyScan(GenericTXMcommands):
 
             if e_region_num != 0:
                 zp_start = zp_end_previous_Eregion + zp_step_resolution * (
-                    e_start - e_end_prevous_Eregion) / self.resolution
+                    e_start - e_end_previous_Eregion) / self.resolution
                 det_start = det_end_previous_Eregion + det_step_resolution * (
-                    e_start - e_end_prevous_Eregion) / self.resolution
+                    e_start - e_end_previous_Eregion) / self.resolution
 
             zp_pos = zp_start
             det_pos = det_start
@@ -161,20 +157,20 @@ class EnergyScan(GenericTXMcommands):
                 base_name = sample[NAME]
                 
                 num_sample_positions = len(sample[SAMPLE_REGIONS])
-                for sample_pos_num in range (num_sample_positions):
+                for sample_pos_num in range(num_sample_positions):
                     sample_region = sample[SAMPLE_REGIONS][sample_pos_num]
                     self.moveX(sample_region[POS_X])
                     self.moveY(sample_region[POS_Y])
                     self.moveZ(sample_region[POS_Z])
 
                     if self._repetitions == 1:
-                        command = 'collect %s_%d_%6.2f_0.xrm\n'
+                        command = 'collect %s_%d_%.2f_0.xrm\n'
                         self.destination.write(command % (base_name, 
                                                           sample_pos_num,
                                                           energies[count]))
                     else:
                         for repetition in range(self._repetitions):
-                            command = 'collect %s_%d_%6.2f_0_%s.xrm\n'
+                            command = 'collect %s_%d_%.2f_0_%s.xrm\n'
                             rep_str = str(repetition).zfill(3)
                             self.destination.write(command % 
                                                     (base_name,
@@ -188,7 +184,7 @@ class EnergyScan(GenericTXMcommands):
                 self.moveY(sample[FF_POS_Y])
 
                 base_name = sample[NAME]
-                self.destination.write('collect %s_0_FF_%6.2f.xrm\n' % 
+                self.destination.write('collect %s_0_FF_%.2f.xrm\n' %
                                        (base_name, energies[count]))
 
                 zp_pos += zp_step
@@ -198,8 +194,7 @@ class EnergyScan(GenericTXMcommands):
                                                   zp_step_resolution)
             det_end_previous_Eregion = det_start + (n_small_step_in_Eregion * 
                                                     det_step_resolution)
-            e_end_prevous_Eregion = e_end
-            
+            e_end_previous_Eregion = e_end
 
         ## Come back to initial positions
         self.moveX(start_x)
