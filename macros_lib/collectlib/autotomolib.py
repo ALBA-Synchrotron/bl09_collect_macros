@@ -91,14 +91,8 @@ class AutoTomosClass(GenericTXMcommands):
                 self.count_collects += 1
 
     def collect_sample(self, sample):
-        print("---------------")
-        print("out energy")
+
         for e_zp_zone in sample[ENERGIES_ZP]:
-            print("in energy")
-            print("---------------")
-            print(self.count_collects)
-            print(self.current_tomo_id)
-            print("---------------")
             self.current_tomo_id = self.count_collects
             current_date = sample[DATE]
             self.current_sample_name = sample[NAME]
@@ -118,7 +112,6 @@ class AutoTomosClass(GenericTXMcommands):
             self.wait(10)
 
             angular_regions = e_zp_zone[ANGULAR_REGIONS]
-            print(angular_regions)
             self._repetitions = sample[N_IMAGES]
 
             for angular_region in angular_regions:
@@ -174,14 +167,8 @@ class AutoTomosClass(GenericTXMcommands):
                 self.destination.write('collect %s_FF_%d.xrm\n' %
                                        (sample_name, i))
                 self.count_collects += 1
-            print("---------------")
-            print(self.count_collects)
-            print(self.current_tomo_id)
-            print("---------------")
+
             self.move_select_workflow(2)
-            print("Move current tomo id target record id")
-            print(self.current_tomo_id)
-            print("end moving target")
             self.move_target_record_id(self.current_tomo_id)
 
     def collect_data(self):
