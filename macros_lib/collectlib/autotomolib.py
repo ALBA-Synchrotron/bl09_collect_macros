@@ -168,11 +168,18 @@ class AutoTomosClass(GenericTXMcommands):
                                        (sample_name, i))
                 self.count_collects += 1
 
-            self.move_select_workflow(2)
+            # Select the action of setting the record ID
+            self.move_select_action(2)
+            # Set the target ID
             self.move_target_record_id(self.current_tomo_id)
+            self.wait(10)
 
     def collect_data(self):
         self.setBinning()
+        # Select Pipeline according DS TXMAutoPreprocessing
+        self.move_select_action(0)
+        # Target: TOMO pipeline according DS TXMAutoPreprocessing
+        self.move_target_workflow(1)
         for sample in self.samples:
             self.collect_sample(sample)
             # wait 5 minutes between samples
