@@ -185,6 +185,10 @@ class AutoTomosClass(GenericTXMcommands):
             # wait 5 minutes between samples
             self.wait(300)
 
+        # Select END action according DS TXMAutoPreprocessing: 4
+        self.move_select_action(4)
+        self.move_target_workflow(0)
+        ####
 
 if __name__ == '__main__':
     tomos_obj = AutoTomosClass(samples, FILE_NAME)
