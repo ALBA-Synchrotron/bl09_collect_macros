@@ -82,7 +82,7 @@ class EnergyScan(GenericTXMcommands):
         self.samples = samples
         self.file_name = file_name
         self._repetitions = None
-        self.resolution = 0.1
+        self.resolution = 0.05
 
     def collect_escan(self, sample):
 
@@ -97,7 +97,8 @@ class EnergyScan(GenericTXMcommands):
         first_energy = init_energy_region[E_START]
         last_energy = end_energy_region[E_END]
 
-        # Total number of steps of 0.1 electronvolts in the total energy range
+        # Total number of steps of resolution 
+        # electronvolts in the total energy range
         num_small_steps = round((last_energy - first_energy) / self.resolution)
 
         # zp start and end positions
@@ -128,7 +129,7 @@ class EnergyScan(GenericTXMcommands):
             e_step = energy_region[E_STEP]
 
             n_small_step_in_Eregion = (e_end - e_start) / self.resolution
-            # Number of steps of 0.1eV in a single Energy step
+            # Number of steps of resolution in eV in a single Energy step
             num_small_steps_in_energy_step = round(e_step / self.resolution)
                                 
             zp_step = zp_step_resolution * num_small_steps_in_energy_step
