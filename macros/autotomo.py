@@ -1,4 +1,5 @@
 import numpy as np
+import PyTango
 
 from sardana.macroserver.macro import Macro, Type
 from sardana.macroserver.msexception import UnknownEnv
@@ -54,7 +55,6 @@ class autotomobase(object):
                        "by suitably formatted name without underscores.")
                 raise ValueError(msg.format(sample_name))
 
-    # TODO: Fix verify samples for this new macro version
     def _verify_samples(self, samples, zp_limit_neg, zp_limit_pos):
         for sample in samples:
             for counter, energy_region in enumerate(sample[ENERGIES_ZP]):
@@ -94,6 +94,14 @@ class autotomobase(object):
             print(zp_limit_pos)
         self._verify_dates_names(samples)
         self._verify_samples(samples, zp_limit_neg, zp_limit_pos)
+
+        autotomods = PyTango.DeviceProxy("BL09/CT/TXMAutoPreprocessing")
+        if autotomods.State() not in [PyTango.DevState.STANDBY]:
+            raise Exception("Device must be in Standby mode to set TXM_file")
+        else:
+            autotomods.txm_file = filename
+            autotomods.start()
+
         tomos_obj = AutoTomosClass(samples, filename)
         tomos_obj.generate()
 
