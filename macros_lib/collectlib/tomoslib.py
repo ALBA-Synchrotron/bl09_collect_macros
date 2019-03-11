@@ -8,12 +8,15 @@ POS_X = 2
 POS_Y = 3
 POS_Z = 4
 ENERGIES_ZP = 5
-ANGULAR_REGIONS = 6
-FF_POS_X = 7
-FF_POS_Y = 8
-EXP_TIME_FF = 9
-N_FF_IMAGES = 10
-N_IMAGES = 11
+FF_POS_X = 6
+FF_POS_Y = 7
+EXP_TIME_FF = 8
+N_FF_IMAGES = 9
+N_IMAGES = 10
+
+ENERGY = 0
+DET_Z = 1
+ANGULAR_REGIONS = 2
 
 REGION_START = 0
 REGION_END = 1
@@ -22,10 +25,6 @@ REGION_EXPTIME = 3
 ZP_Z = 4
 ZP_STEP = 5
 NUM_ZPS = 6
-
-ENERGY = 0
-DET_Z = 1
-
 
 FILE_NAME = 'manytomos.txt'
 
@@ -40,17 +39,17 @@ samples = [
             [
                 100,  # energy
                 20000,  # detector Z position
-            ]
-        ],
-        [  # angular regions
-            [
-                -10,  # start
-                10,  # end
-                10,  # theta step
-                1,  # integration time
-                50,  # ZP Z central position
-                0.2,  # ZP step
-                3,  # number of ZP positions
+                [  # angular regions
+                    [
+                        -10,  # start
+                        10,  # end
+                        10,  # theta step
+                        1,  # integration time
+                        50,  # ZP Z central position
+                        0.2,  # ZP step
+                        3,  # number of ZP positions
+                    ],
+                ],
             ],
         ],
         2,  # flat field position x
@@ -104,7 +103,7 @@ class ManyTomos(GenericTXMcommands):
             self.moveTheta(-70.1)
             self.wait(10)
 
-            angular_regions = sample[ANGULAR_REGIONS]
+            angular_regions = e_zp_zone[ANGULAR_REGIONS]
             self._repetitions = sample[N_IMAGES]
 
             for angular_region in angular_regions:

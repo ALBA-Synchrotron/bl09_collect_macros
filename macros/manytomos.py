@@ -4,9 +4,6 @@ from sardana.macroserver.macro import Macro, Type
 from sardana.macroserver.msexception import UnknownEnv
 from collectlib.tomoslib import ManyTomos
 
-energy_zp_def = [['energy', Type.Float, None, 'Beam energy'],
-                 ['det_z', Type.Float, None, 'Detector Z position'],
-                 {'min': 1}]
 
 regions_def = [['start', Type.Float, None, 'Theta start position'],
                ['end', Type.Float, None, 'Theta end position'],
@@ -17,12 +14,23 @@ regions_def = [['start', Type.Float, None, 'Theta start position'],
                ['num_zps', Type.Float, 1, 'Number of ZonePlate positions'],
                {'min': 1, 'max': 200}]
 
+energy_zp_def = [['energy', Type.Float, None, 'Beam energy'],
+                 ['det_z', Type.Float, None, 'Detector Z position'],
+                 ['sample_theta', regions_def, None, ('Regions of the'
+                                                      ' theta motor')],
+                 {'min': 1}]
+
 # name position in sample
 DATE = 0
 NAME = 1
 
+# energy-ZP regions
+ENERGIES_ZP = 5
+
 # angular regions position in the macro parameters
-ANGULAR_REGIONS = 6
+ENERGY = 0
+DET_Z = 1
+ANGULAR_REGIONS = 2
 
 
 class manytomosbase(object):
@@ -46,26 +54,30 @@ class manytomosbase(object):
                        "by suitably formatted name without underscores.")
                 raise ValueError(msg.format(sample_name))
 
+    # TODO: Fix verify samples for this new macro version
     def _verify_samples(self, samples, zp_limit_neg, zp_limit_pos):
         for sample in samples:
-            for counter, angular_region in enumerate(sample[ANGULAR_REGIONS]):
-                zp_central_pos = angular_region[4]
-                zp_step = angular_region[5]
-                num_zps = angular_region[6]
-                if zp_step == 0:
-                    zp_positions = [zp_central_pos]
-                else:
-                    start = zp_central_pos - zp_step * (num_zps - 1) / 2.0
-                    stop = zp_central_pos + zp_step * (num_zps - 1) / 2.0
-                    zp_positions = np.linspace(start, stop, num_zps)
-                for zp_position in zp_positions:
-                    if (zp_position < zp_limit_neg or 
-                            zp_position > zp_limit_pos):
-                        msg = ("The sample {0} has the zone_plate {1} out of"
-                               " range. The accepted range is from %s to"
-                               " %s um.") % (zp_limit_neg, zp_limit_pos)
-                        date_name = sample[DATE] + sample[NAME]
-                        raise ValueError(msg.format(date_name, counter+1))
+            for counter, energy_region in enumerate(sample[ENERGIES_ZP]):
+                for cnt, angular_region in enumerate(
+                        energy_region[ANGULAR_REGIONS]):
+                    zp_central_pos = angular_region[4]
+                    zp_step = angular_region[5]
+                    num_zps = angular_region[6]
+                    if zp_step == 0:
+                        zp_positions = [zp_central_pos]
+                    else:
+                        start = zp_central_pos - zp_step * (num_zps - 1) / 2.0
+                        stop = zp_central_pos + zp_step * (num_zps - 1) / 2.0
+                        zp_positions = np.linspace(start, stop, num_zps)
+                    for zp_position in zp_positions:
+                        if (zp_position < zp_limit_neg or
+                                zp_position > zp_limit_pos):
+                            msg = ("The sample {0} has the zone_plate {1} "
+                                   "out of range. The accepted range is "
+                                   "from %s to %s um.") % (zp_limit_neg,
+                                                           zp_limit_pos)
+                            date_name = sample[DATE] + sample[NAME]
+                            raise ValueError(msg.format(date_name, cnt+1))
 
     def run(self, samples, filename):
         try:
@@ -91,8 +103,6 @@ class manytomos(manytomosbase, Macro):
                      ['pos_y', Type.Float, None, 'Position of the Y motor'],
                      ['pos_z', Type.Float, None, 'Position of the Z motor'],
                      ['energy_zp', energy_zp_def, None, 'energy ZP zones'],
-                     ['sample_theta', regions_def, None, ('Regions of the'
-                                                          ' theta motor')],
                      ['ff_pos_x', Type.Float, None, ('Position of the X motor'
                                                      ' for the flat field'
                                                      ' acquisition')],
