@@ -54,11 +54,10 @@ class GenericTXMcommands(object):
     def move_target_workflow(self, pry):
         self.destination.write('moveto pry %6.2f\n' % pry)
 
-    def move_target_angle(self, pry):
-        self.destination.write('moveto pry %6.2f\n' % pry)
+    move_target_angle = move_target_workflow
+    move_target_record_id = move_target_workflow
+    move_target_folder = move_target_workflow
 
-    def move_target_record_id(self, pry):
-        self.destination.write('moveto pry %6.2f\n' % pry)
     ##############################################
 
     def go_to_sample_xyz_pos(self, pos_x, pos_y, pos_z):
