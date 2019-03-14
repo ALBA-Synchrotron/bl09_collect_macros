@@ -180,15 +180,19 @@ class AutoTomosClass(GenericTXMcommands):
         self.move_select_action(0)
         # Target: TOMO pipeline according DS TXMAutoPreprocessing
         self.move_target_workflow(1)
+        num = 0
         for sample in self.samples:
+            num += 1
             self.collect_sample(sample)
-            # wait 5 minutes between samples
-            self.wait(300)
+            # wait 5 minutes between samples (don't wait for last loop)
+            if num < len(self.samples):
+                self.wait(300)
 
         # Select END action according DS TXMAutoPreprocessing: 4
         self.move_select_action(4)
         self.move_target_workflow(0)
         ####
+
 
 if __name__ == '__main__':
     tomos_obj = AutoTomosClass(samples, FILE_NAME)
