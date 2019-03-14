@@ -162,10 +162,13 @@ class ManyTomos_vdos(GenericTXMcommands):
 
     def collect_data(self):
         self.setBinning()
+        num = 0
         for sample in self.samples:
+            num += 1
             self.collect_sample(sample)
-            # wait 5 minutes between samples
-            self.wait(300)
+            # wait 5 minutes between samples (don't wait for last loop)
+            if num < len(self.samples):
+                self.wait(300)
 
 
 if __name__ == '__main__':
