@@ -66,6 +66,10 @@ class ManyTomos(GenericTXMcommands):
     def __init__(self, samples=None, file_name=None):
         GenericTXMcommands.__init__(self, file_name=file_name)
         self.samples = samples
+        self.count_collects = 1
+        # current_tomo_id reflects the record number of the first image
+        # of a given tomo (given date, sample, energy).
+        self.current_tomo_id = 1
 
     def collect(self, sample_date="20171124"):
         sample_date = sample_date
@@ -79,13 +83,22 @@ class ManyTomos(GenericTXMcommands):
         if self._repetitions == 1 or self._repetitions is None:
             file_name = '%s.%s' % (base_name, extension)
             self.destination.write('collect %s\n' % file_name)
+            self.count_collects += 1
         else:
             for repetition in range(self._repetitions):
                 file_name = '%s_%d.%s' % (base_name, repetition, extension)
                 self.destination.write('collect %s\n' % file_name)
+                self.count_collects += 1
 
     def collect_sample(self, sample):
         for e_zp_zone in sample[ENERGIES_ZP]:
+
+            self.current_tomo_id = self.count_collects
+            # Select the action for setting the acquired xrm folder
+            self.move_select_action(5)
+            # Set the target folder_number
+            self.move_target_folder(self.current_tomo_id)
+            
             current_date = sample[DATE]
             self.current_sample_name = sample[NAME]
 
@@ -158,6 +171,7 @@ class ManyTomos(GenericTXMcommands):
             for i in range(sample[N_FF_IMAGES]):
                 self.destination.write('collect %s_FF_%d.xrm\n' %
                                        (sample_name, i))
+                self.count_collects += 1
 
     def collect_data(self):
         self.setBinning()
