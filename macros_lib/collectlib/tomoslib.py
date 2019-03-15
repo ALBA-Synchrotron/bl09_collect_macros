@@ -70,6 +70,8 @@ class ManyTomos(GenericTXMcommands):
         # current_tomo_id reflects the record number of the first image
         # of a given tomo (given date, sample, energy).
         self.current_tomo_id = 1
+        # Number of acquired tomo, linked to the number of folder
+        self.current_tomo_num = 1
 
     def collect(self, sample_date="20171124"):
         sample_date = sample_date
@@ -97,7 +99,8 @@ class ManyTomos(GenericTXMcommands):
             # Select the action for setting the acquired xrm folder
             self.move_select_action(5)
             # Set the target folder_number
-            self.move_target_folder(self.current_tomo_id)
+            self.move_target_folder(self.current_tomo_num)
+            self.current_tomo_num += 1
 
             current_date = sample[DATE]
             self.current_sample_name = sample[NAME]
