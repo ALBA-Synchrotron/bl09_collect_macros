@@ -79,7 +79,7 @@ class manytomosbase(object):
                             date_name = sample[DATE] + sample[NAME]
                             raise ValueError(msg.format(date_name, cnt+1))
 
-    def run(self, samples, filename):
+    def run(self, samples, filename, start):
         try:
             zp_limit_neg = self.getEnv("ZP_Z_limit_neg")
         except UnknownEnv:
@@ -90,6 +90,19 @@ class manytomosbase(object):
             zp_limit_pos = float("Inf")
         self._verify_dates_names(samples)
         self._verify_samples(samples, zp_limit_neg, zp_limit_pos)
+
+        if start:
+            import PyTango
+            #autotomods = PyTango.DeviceProxy(
+            #    "testbl09/ct/TXMAutoPreprocessing")
+            autotomods = PyTango.DeviceProxy("BL09/CT/TXMAutoPreprocessing")
+            if autotomods.State() not in [PyTango.DevState.STANDBY]:
+                raise Exception("Device must be in Standby mode "
+                                "to set TXM_file")
+            else:
+                autotomods.txm_file = filename
+                autotomods.start()
+
         tomos_obj = ManyTomos(samples, filename)
         tomos_obj.generate()
 
@@ -115,5 +128,6 @@ class manytomos(manytomosbase, Macro):
                                                     ' per angle')]],
             None, 'List of samples'],
         ['out_file', Type.Filename, None, 'Output file'],
+        ['start', Type.Boolean, False, 'Start the Device for acquisition']
     ]
 
