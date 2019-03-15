@@ -98,7 +98,7 @@ class ManyTomos(GenericTXMcommands):
             self.move_select_action(5)
             # Set the target folder_number
             self.move_target_folder(self.current_tomo_id)
-            
+
             current_date = sample[DATE]
             self.current_sample_name = sample[NAME]
 
@@ -182,6 +182,11 @@ class ManyTomos(GenericTXMcommands):
             # wait 5 minutes between samples (don't wait for last loop)
             if num < len(self.samples):
                 self.wait(300)
+
+        # Select END action according DS TXMAutoPreprocessing: 4
+        self.move_select_action(4)
+        self.move_target_workflow(0)
+        ####
 
 
 if __name__ == '__main__':
