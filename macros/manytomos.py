@@ -91,6 +91,9 @@ class manytomosbase(object):
         self._verify_dates_names(samples)
         self._verify_samples(samples, zp_limit_neg, zp_limit_pos)
 
+        tomos_obj = ManyTomos(samples, filename)
+        tomos_obj.generate()
+
         if start:
             import PyTango
             #autotomods = PyTango.DeviceProxy(
@@ -102,9 +105,6 @@ class manytomosbase(object):
             else:
                 autotomods.txm_file = filename
                 autotomods.start()
-
-        tomos_obj = ManyTomos(samples, filename)
-        tomos_obj.generate()
 
 
 class manytomos(manytomosbase, Macro):
