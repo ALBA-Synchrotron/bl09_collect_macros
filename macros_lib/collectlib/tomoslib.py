@@ -184,7 +184,7 @@ class ManyTomos(GenericTXMcommands):
             self.collect_sample(sample)
             # wait 5 minutes between samples (don't wait for last loop)
             if num < len(self.samples):
-                self.wait(300)
+                self.wait(180)
 
         # Select END action according DS TXMAutoPreprocessing: 4
         self.move_select_action(4)
