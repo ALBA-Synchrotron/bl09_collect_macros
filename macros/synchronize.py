@@ -29,11 +29,11 @@ class synchronize(Macro):
 
     def run(self):
 
-        select_motor = PyTango.DeviceProxy("motor/motctrl15/1")
-        target_motor = PyTango.DeviceProxy("motor/motctrl15/2")
+        select_motor = PyTango.DeviceProxy("bl09/ct/txm-select")
+        target_motor = PyTango.DeviceProxy("bl09/ct/txm-target")
 
         state_select = select_motor.state()
         state_target = target_motor.state()
-        if (state_select == DevState.ALARM or state_target == DevState.ALARM):
+        if state_select == DevState.ALARM or state_target == DevState.ALARM:
             select_motor.Position = 6
             target_motor.Position = 6
