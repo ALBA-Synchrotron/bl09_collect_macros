@@ -15,7 +15,7 @@
 ##
 ##############################################################################
 
-import PyTango
+from PyTango import DevState
 from sardana.macroserver.macro import Macro, Type
 
 
@@ -34,7 +34,6 @@ class synchronize(Macro):
 
         state_select = select_motor.state()
         state_target = target_motor.state()
-        if (state_select == PyTango._PyTango.DevState.ALARM or
-                state_target == PyTango._PyTango.DevState.ALARM):
+        if (state_select == DevState.ALARM or state_target == DevState.ALARM):
             select_motor.Position = 6
             target_motor.Position = 6
