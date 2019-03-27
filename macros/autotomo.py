@@ -81,16 +81,16 @@ class autotomobase(object):
     def run(self, samples, filename, start):
         try:
             zp_limit_neg = self.getEnv("ZP_Z_limit_neg")
-            print(zp_limit_neg)
+            # print(zp_limit_neg)
         except UnknownEnv:
             zp_limit_neg = float("-Inf")
-            print(zp_limit_neg)
+            # print(zp_limit_neg)
         try:
             zp_limit_pos = self.getEnv("ZP_Z_limit_pos")
-            print(zp_limit_pos)
+            # print(zp_limit_pos)
         except UnknownEnv:
             zp_limit_pos = float("Inf")
-            print(zp_limit_pos)
+            # print(zp_limit_pos)
         self._verify_dates_names(samples)
         self._verify_samples(samples, zp_limit_neg, zp_limit_pos)
 
