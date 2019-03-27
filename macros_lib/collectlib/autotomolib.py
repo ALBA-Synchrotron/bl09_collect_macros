@@ -70,6 +70,8 @@ class AutoTomosClass(GenericTXMcommands):
         # current_tomo_id reflects the record number of the first image
         # of a given tomo (given date, sample, energy).
         self.current_tomo_id = 1
+        # Number of acquired tomo, linked to the number of folder
+        self.current_tomo_num = 1
 
     def collect(self, sample_date="20171124"):
         sample_date = sample_date
@@ -91,9 +93,14 @@ class AutoTomosClass(GenericTXMcommands):
                 self.count_collects += 1
 
     def collect_sample(self, sample):
-
         for e_zp_zone in sample[ENERGIES_ZP]:
             self.current_tomo_id = self.count_collects
+            # Select the action for setting the acquired xrm folder
+            self.move_select_action(5)
+            # Set the target folder_number
+            self.move_target_folder(self.current_tomo_num)
+            self.current_tomo_num += 1
+
             current_date = sample[DATE]
             self.current_sample_name = sample[NAME]
 
@@ -169,6 +176,8 @@ class AutoTomosClass(GenericTXMcommands):
                 self.count_collects += 1
 
             # Select the action of setting the record ID
+            # This will allow to TXMAutoPreprocessing DS to execute
+            # the preprocessing pipeline for a given Tomo
             self.move_select_action(2)
             # Set the target ID
             self.move_target_record_id(self.current_tomo_id)
@@ -186,7 +195,7 @@ class AutoTomosClass(GenericTXMcommands):
             self.collect_sample(sample)
             # wait 5 minutes between samples (don't wait for last loop)
             if num < len(self.samples):
-                self.wait(300)
+                self.wait(180)
 
         # Select END action according DS TXMAutoPreprocessing: 4
         self.move_select_action(4)

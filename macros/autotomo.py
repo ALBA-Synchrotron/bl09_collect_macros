@@ -1,5 +1,4 @@
 import numpy as np
-import PyTango
 
 from sardana.macroserver.macro import Macro, Type
 from sardana.macroserver.msexception import UnknownEnv
@@ -79,7 +78,7 @@ class autotomobase(object):
                             date_name = sample[DATE] + sample[NAME]
                             raise ValueError(msg.format(date_name, cnt+1))
 
-    def run(self, samples, filename):
+    def run(self, samples, filename, start):
         try:
             zp_limit_neg = self.getEnv("ZP_Z_limit_neg")
             print(zp_limit_neg)
@@ -95,15 +94,20 @@ class autotomobase(object):
         self._verify_dates_names(samples)
         self._verify_samples(samples, zp_limit_neg, zp_limit_pos)
 
-        autotomods = PyTango.DeviceProxy("BL09/CT/TXMAutoPreprocessing")
-        if autotomods.State() not in [PyTango.DevState.STANDBY]:
-            raise Exception("Device must be in Standby mode to set TXM_file")
-        else:
-            autotomods.txm_file = filename
-            autotomods.start()
-
         tomos_obj = AutoTomosClass(samples, filename)
         tomos_obj.generate()
+
+        if start:
+            import PyTango
+            # autotomods = PyTango.DeviceProxy(
+            #   "testbl09/ct/TXMAutoPreprocessing")
+            autotomods = PyTango.DeviceProxy("BL09/CT/TXMAutoPreprocessing")
+            if autotomods.State() not in [PyTango.DevState.STANDBY]:
+                raise Exception("Device must be in Standby mode "
+                                "to set TXM_file")
+            else:
+                autotomods.txm_file = filename
+                autotomods.start()
 
 
 class autotomo(autotomobase, Macro):
@@ -127,5 +131,6 @@ class autotomo(autotomobase, Macro):
                                                     ' per angle')]],
             None, 'List of samples'],
         ['out_file', Type.Filename, None, 'Output file'],
+        ['start', Type.Boolean, True, 'Start the Device for acquisition']
     ]
 
