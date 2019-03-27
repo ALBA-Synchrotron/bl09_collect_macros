@@ -128,6 +128,6 @@ class manytomos(manytomosbase, Macro):
                                                     ' per angle')]],
             None, 'List of samples'],
         ['out_file', Type.Filename, None, 'Output file'],
-        ['start', Type.Boolean, False, 'Start the Device for acquisition']
+        ['start', Type.Boolean, True, 'Start the Device for acquisition']
     ]
 
