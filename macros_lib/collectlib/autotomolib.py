@@ -93,6 +93,7 @@ class AutoTomosClass(GenericTXMcommands):
                 self.count_collects += 1
 
     def collect_sample(self, sample):
+        num = 0
         for e_zp_zone in sample[ENERGIES_ZP]:
             self.current_tomo_id = self.count_collects
             # Select the action for setting the acquired xrm folder
@@ -181,7 +182,11 @@ class AutoTomosClass(GenericTXMcommands):
             self.move_select_action(2)
             # Set the target ID
             self.move_target_record_id(self.current_tomo_id)
-            self.wait(10)
+            # wait some time between sample at different energies
+            # (don't wait for last loop)
+            num += 1
+            if num < len(sample[ENERGIES_ZP]):
+                self.wait(180)
 
     def collect_data(self):
         self.setBinning()
@@ -189,15 +194,17 @@ class AutoTomosClass(GenericTXMcommands):
         self.move_select_action(0)
         # Target: TOMO pipeline according DS TXMAutoPreprocessing
         self.move_target_workflow(1)
+        self.wait(5)
         num = 0
         for sample in self.samples:
             num += 1
             self.collect_sample(sample)
-            # wait 5 minutes between samples (don't wait for last loop)
+            # wait some time between samples (don't wait for last loop)
             if num < len(self.samples):
                 self.wait(180)
 
         # Select END action according DS TXMAutoPreprocessing: 4
+        self.wait(5)
         self.move_select_action(4)
         self.move_target_workflow(0)
         ####
