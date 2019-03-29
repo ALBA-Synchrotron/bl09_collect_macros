@@ -3,16 +3,17 @@ import numpy as np
 
 from txmcommands import GenericTXMcommands
 
-NAME = 0
-SAMPLE_REGIONS = 1
-ENERGY_REGIONS = 2
-ZP_START = 3
-ZP_END = 4
-DET_START = 5
-DET_END = 6
-FF_POS_X = 7
-FF_POS_Y = 8
-N_IMAGES = 9
+DATE = 0
+NAME = 1
+SAMPLE_REGIONS = 2
+ENERGY_REGIONS = 3
+ZP_START = 4
+ZP_END = 5
+DET_START = 6
+DET_END = 7
+FF_POS_X = 8
+FF_POS_Y = 9
+N_IMAGES = 10
 
 POS_X = 0
 POS_Y = 1
@@ -27,16 +28,17 @@ EXP_TIME_FF = 4
 FILE_NAME = 'energyscan.txt'
 
 samples = [
-    [ # sample with energies and zone plates
-        "20170913_toto", # name
-        [# Regions in sample to be imaged
+    [  # sample with energies and zone plates
+        '20190329'  # date
+        'sample1',  # name
+        [  # Regions in sample to be imaged
             [ 
-            0, # pos x
-            0, # pos y
-            0, # pos z
+            0,  # pos x
+            0,  # pos y
+            0,  # pos z
             ],
         ],
-        [ # energy regions
+        [  # energy regions
             [
                 515.0,  
                 525.0, 
@@ -70,11 +72,12 @@ samples = [
         -9827.8,
         -1103.0,
         -787.8,
-        1.0, # flatfield position x
-        1.0, # flat field position y
-        1 # flat field position y
+        1.0,  # flat field position x
+        1.0,  # flat field position y
+        1  # flat field position y
     ]
 ]
+
 
 class EnergyScan(GenericTXMcommands):
 
@@ -86,7 +89,10 @@ class EnergyScan(GenericTXMcommands):
 
     def collect_escan(self, sample):
 
-        # Sample start positions 
+        date = sample[DATE]
+        base_name = sample[NAME]
+
+        # Sample start positions
         sample_region = sample[SAMPLE_REGIONS][0]
         start_x = sample_region[POS_X]
         start_y = sample_region[POS_Y]
@@ -155,8 +161,6 @@ class EnergyScan(GenericTXMcommands):
                 self.moveZonePlateZ(zp_pos)
                 self.moveDetector(det_pos)
 
-                base_name = sample[NAME]
-                
                 num_sample_positions = len(sample[SAMPLE_REGIONS])
                 for sample_pos_num in range(num_sample_positions):
                     sample_region = sample[SAMPLE_REGIONS][sample_pos_num]
@@ -165,28 +169,26 @@ class EnergyScan(GenericTXMcommands):
                     self.moveZ(sample_region[POS_Z])
 
                     if self._repetitions == 1:
-                        command = 'collect %s_%d_%.2f_0.xrm\n'
-                        self.destination.write(command % (base_name, 
-                                                          sample_pos_num,
-                                                          energies[count]))
+                        command = 'collect %s_%s_%d_%.2f_0.xrm\n'
+                        self.destination.write(command % (
+                            date, base_name,
+                            sample_pos_num, energies[count]))
                     else:
                         for repetition in range(self._repetitions):
-                            command = 'collect %s_%d_%.2f_0_%s.xrm\n'
+                            command = 'collect %s_%s_%d_%.2f_0_%s.xrm\n'
                             rep_str = str(repetition).zfill(3)
-                            self.destination.write(command % 
-                                                    (base_name,
-                                                     sample_pos_num,
-                                                     energies[count],
-                                                     rep_str))
+                            self.destination.write(command % (
+                                date, base_name,
+                                sample_pos_num, energies[count], rep_str))
 
                 # Collect flatfield image
                 self.setExpTime(energy_region[EXP_TIME_FF])
                 self.moveX(sample[FF_POS_X])
                 self.moveY(sample[FF_POS_Y])
 
-                base_name = sample[NAME]
-                self.destination.write('collect %s_0_FF_%.2f.xrm\n' %
-                                       (base_name, energies[count]))
+                command = 'collect %s_%s_0_FF_%.2f.xrm\n'
+                self.destination.write(command % (date, base_name,
+                                                  energies[count]))
 
                 zp_pos += zp_step
                 det_pos += det_step
@@ -197,7 +199,7 @@ class EnergyScan(GenericTXMcommands):
                                                     det_step_resolution)
             e_end_previous_Eregion = e_end
 
-        ## Come back to initial positions
+        # Come back to initial positions
         self.moveX(start_x)
         self.moveY(start_y)
         self.moveZ(start_z)
@@ -210,9 +212,9 @@ class EnergyScan(GenericTXMcommands):
         self.setBinning()
         for sample in self.samples:
             self.collect_escan(sample)
-            # wait 5 minutes between samples
+            # wait some time between samples
             if len(self.samples) > 1:
-                self.wait(300)
+                self.wait(180)
 
 
 if __name__ == '__main__':
