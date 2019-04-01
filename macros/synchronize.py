@@ -15,6 +15,7 @@
 ##
 ##############################################################################
 
+import os
 from PyTango import DevState
 from sardana.macroserver.macro import Macro, Type
 
@@ -37,3 +38,19 @@ class synchronize(Macro):
         if state_select == DevState.ALARM or state_target == DevState.ALARM:
             select_motor.Position = 6
             target_motor.Position = 6
+
+
+class link(Macro):
+    """Reset the symbolic link used for data collection, at the 
+    default folder. This macro is thought to be used when the 
+    symlink is broken, or if it has to be reset to the default"""
+
+    def run(self):
+        all_files_link = "/beamlines/bl09/controls/BL09_RAWDATA"
+        os.system("rm %s" % all_files_link)
+        
+        root_folder = "/beamlines/bl09/controls/DEFAULT_USER_FOLDER"
+        root_folder_relative_path = root_folder.replace(
+             "/beamlines/bl09", "..")
+        os.system("ln -s %s %s" % (root_folder_relative_path, all_files_link))
+
