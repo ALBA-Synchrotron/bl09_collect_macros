@@ -101,7 +101,7 @@ class autotomobase(object):
             import PyTango
             # autotomods = PyTango.DeviceProxy(
             #   "testbl09/ct/TXMAutoPreprocessing")
-            autotomods = PyTango.DeviceProxy("BL09/CT/TXMAutoPreprocessing")
+            autotomods = PyTango.DeviceProxy("testbl09/CT/TXMAutoPreprocessing")
             if autotomods.State() not in [PyTango.DevState.STANDBY]:
                 raise Exception("Device must be in Standby mode "
                                 "to set TXM_file")
