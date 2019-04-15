@@ -1,4 +1,5 @@
 import numpy as np
+from datetime import datetime
 
 from sardana.macroserver.macro import Macro, Type
 from sardana.macroserver.msexception import UnknownEnv
@@ -38,6 +39,8 @@ class autotomobase(object):
     data collection using the XMController Microscope Software.
     """
 
+    today = datetime.today().strftime("%Y%m%d")
+        
     def _verify_dates_names(self, samples):
         for sample in samples:
             sample_date = sample[DATE]
@@ -113,7 +116,8 @@ class autotomobase(object):
 class autotomo(autotomobase, Macro):
 
     param_def = [
-        ['samples', [['date', Type.String, None, 'Sample date: YYYYMMDD'],
+        ['samples', [['date', Type.String, autotomobase.today, 
+                      'Sample date: YYYYMMDD'],
                      ['name', Type.String, None, 'Sample name'],
                      ['pos_x', Type.Float, None, 'Position of the X motor'],
                      ['pos_y', Type.Float, None, 'Position of the Y motor'],

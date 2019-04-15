@@ -1,4 +1,5 @@
 import numpy as np
+from datetime import datetime
 
 from sardana.macroserver.macro import Macro, Type
 from sardana.macroserver.msexception import UnknownEnv
@@ -38,6 +39,8 @@ class manytomosbase_dir(object):
     data collection using the XMController Microscope Software.
     """
 
+    today = datetime.today().strftime("%Y%m%d")
+        
     def _verify_dates_names(self, samples):
         for sample in samples:
             sample_date = sample[DATE]
@@ -97,7 +100,8 @@ class manytomosbase_dir(object):
 class manytomos_dir(manytomosbase_dir, Macro):
 
     param_def = [
-        ['samples', [['date', Type.String, None, 'Sample date: YYYYMMDD'],
+        ['samples', [['date', Type.String, manytomosbase_dir.today, 
+                      'Sample date: YYYYMMDD'],
                      ['name', Type.String, None, 'Sample name'],
                      ['pos_x', Type.Float, None, 'Position of the X motor'],
                      ['pos_y', Type.Float, None, 'Position of the Y motor'],

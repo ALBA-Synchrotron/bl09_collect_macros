@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from sardana.macroserver.macro import Macro, Type
 from collectlib.energyscanlib import EnergyScan
 
@@ -24,6 +26,8 @@ class energyscanbase(object):
     many different energies (energy scan).
     """
 
+    today = datetime.today().strftime("%Y%m%d")
+    
     def _verify_dates_names(self, samples):
         for sample in samples:
             sample_date = sample[DATE]
@@ -49,7 +53,8 @@ class energyscanbase(object):
 class energyscan(energyscanbase, Macro):
 
     param_def = [
-        ['samples', [['date', Type.String, None, 'Sample date: YYYYMMDD'],
+        ['samples', [['date', Type.String, energyscanbase.today, 
+                      'Sample date: YYYYMMDD'],
                      ['name', Type.String, None, 'Sample name'],
                      ['sample_regions',  sample_pos_def, None, (
                          'Regions of the sample to be imaged')],

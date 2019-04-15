@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from sardana.macroserver.macro import Macro, Type
 from sardana.macroserver.msexception import UnknownEnv
 from collectlib.spectrotomolib import SpectroTomo
@@ -18,6 +20,8 @@ class spectrotomobase(object):
     while changing energies.
     """
 
+    today = datetime.today().strftime("%Y%m%d")
+        
     def _verify_dates_names(self, samples):
         for sample in samples:
             sample_date = sample[DATE]
@@ -85,7 +89,8 @@ class spectrotomo(spectrotomobase, Macro):
                  {'min': 1}]
 
     param_def = [
-        ['samples', [['date', Type.String, None, 'Sample date: YYYYMMDD'],
+        ['samples', [['date', Type.String, spectrotomobase.today, 
+                      'Sample date: YYYYMMDD'],
                      ['name', Type.String, None, 'Sample name'],
                      ['pos_x', Type.Float, None, 'Position of the X motor'],
                      ['pos_y', Type.Float, None, 'Position of the Y motor'],
@@ -109,3 +114,4 @@ class spectrotomo(spectrotomobase, Macro):
 
         ['out_file', Type.Filename, None, 'Output file'],
     ]
+
