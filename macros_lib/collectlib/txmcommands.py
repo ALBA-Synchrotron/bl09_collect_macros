@@ -98,6 +98,11 @@ class GenericTXMcommands(object):
         self.wait(5)
         self.moveEnergy(energy)
 
+    def go_to_jj(self, jj_up_pos, jj_down_pos):
+        # Move both JJ motors to set the light polarization
+        self.destination.write('moveto phy %6.2f\n' % jj_up_pos)
+        self.destination.write('moveto phx %6.2f\n' % jj_down_pos)
+
     def go_to_energy_zp_det(self, energy, zp_z, det_z):
         self.go_to_energy(energy)
         self.moveZonePlateZ(zp_z)
