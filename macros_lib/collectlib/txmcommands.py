@@ -54,6 +54,10 @@ class GenericTXMcommands(object):
     def move_target_workflow(self, pry):
         self.destination.write('moveto pry %6.2f\n' % pry)
 
+    def move_select_target(self, prx, pry):
+        self.destination.write('moveto prx %6.2f\n' % prx)
+        self.destination.write('moveto pry %6.2f\n' % pry)
+
     move_target_angle = move_target_workflow
     move_target_record_id = move_target_workflow
     move_target_folder = move_target_workflow
@@ -98,10 +102,12 @@ class GenericTXMcommands(object):
         self.wait(5)
         self.moveEnergy(energy)
 
-    def go_to_jj(self, jj_up_pos, jj_down_pos):
+    def go_to_jj(self, jj_down_pos, jj_up_pos, ZPz):
         # Move both JJ motors to set the light polarization
-        self.destination.write('moveto phy %6.2f\n' % jj_up_pos)
-        self.destination.write('moveto phx %6.2f\n' % jj_down_pos)
+        self.destination.write('moveto phy %6.2f\n' % jj_down_pos)
+        self.destination.write('moveto phx %6.2f\n' % jj_up_pos)
+        self.destination.write('moveto ZPz %6.2f\n' % ZPz)
+        self.wait(80)
 
     def go_to_energy_zp_det(self, energy, zp_z, det_z):
         self.go_to_energy(energy)
