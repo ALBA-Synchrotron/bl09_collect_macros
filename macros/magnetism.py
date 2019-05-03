@@ -33,13 +33,12 @@ class magnetismbase(object):
                        "by suitably formatted name without underscores.")
                 raise ValueError(msg.format(sample_name))
 
-
     # TODO: Verify ZPz
 
-    def run(self, samples, filename):
+    def run(self, samples, filename, start):
         self._verify_dates_names(samples)
-        spectrotomo_obj = SpectroTomo(samples, filename)
-        spectrotomo_obj.generate()
+        magnetism_obj = Magnetism(samples, filename)
+        magnetism_obj.generate()
 
         if start:
             #autotomods = PyTango.DeviceProxy(
@@ -93,9 +92,10 @@ class magnetism(magnetismbase, Macro):
                      ['ff_pos_z', Type.Float, None, ('Position of the Z motor'
                                                      ' for the flat field'
                                                      ' acquisition')],
-                     ['ff_zp_up', Type.Float, None, 'ZPz position for JJ up'],
-                     ['ff_zp_down', Type.Float, None, 'ZPz position for'
-                                                      ' JJ down'],
+                     ['ff_zp_1', Type.Float, None, 'ZPz position for JJ '
+                                                   'offset position 1'],
+                     ['ff_zp_2', Type.Float, None, 'ZPz position for JJ '
+                                                   'offset position 2'],
                      ['ff_exptime', Type.Float, 1, 'FF Exposure time'],
                      ['ff_n_images', Type.Integer, 10, 'Number of FF images']],
          None, 'List of samples'],

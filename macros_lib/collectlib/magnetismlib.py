@@ -1,3 +1,4 @@
+import time
 import numpy as np
 from txmcommands import GenericTXMcommands
 
@@ -17,8 +18,8 @@ FF_THETA = 11
 FF_POS_X = 12
 FF_POS_Y = 13
 FF_POS_Z = 14
-FF_ZP_UP = 15
-FF_ZP_DOWN = 16
+FF_ZP_1 = 15
+FF_ZP_2 = 16
 FF_EXPTIME = 17
 FF_N_IMAGES = 18
 
@@ -69,8 +70,8 @@ samples = [
         12,  # FlatField position x
         12,  # FlatField position y
         12,  # FlatField position z
-        -11000,  # FlatField ZP position for JJ up
-        -11040,  # FlatField ZP position for JJ down
+        -11000,  # FlatField ZP position for JJ 1
+        -11040,  # FlatField ZP position for JJ 2
         2,  # Exposure time FF
         10,  # Num FF images
     ],
@@ -105,7 +106,29 @@ class Magnetism(GenericTXMcommands):
                 file_name = '%s_%d.%s' % (base_name, repetition, extension)
                 self.destination.write('collect %s\n' % file_name)
 
+    def collect_FF(self, sample, jj_offset_1, jj_offset_2):
+        # Execute flat field acquisitions #
+        self.moveTheta(0)
+        self.moveTheta(FF_THETA)
+        self.go_to_sample_xyz_pos(sample[FF_POS_X], sample[FF_POS_Y],
+                                  sample[FF_POS_Z])
+        self.setExpTime(sample[FF_EXPTIME])
+        self.go_to_jj(sample[FF_ZP_2], sample[JJ_UP_1], sample[ZP_1])
+        sample_name = '%s_%s_%.2f' % (self.current_sample_date,
+                                      self.current_sample_name, jj_offset_1)
+        for i in range(sample[FF_N_IMAGES]):
+            self.destination.write('collect %s_FF_%d.xrm\n' % (sample_name, i))
+        self.go_to_jj(sample[FF_ZP_2], sample[JJ_UP_2], sample[ZP_2])
+        sample_name = '%s_%s_%.2f' % (self.current_sample_date,
+                                      self.current_sample_name, jj_offset_2)
+        for i in range(sample[FF_N_IMAGES]):
+            self.destination.write('collect %s_FF_%d.xrm\n' % (sample_name, i))
+
     def collect_sample(self, sample):
+        file_name_collect = '{0}_collect.{1}'.format(
+            *self.file_name.rsplit('.', 1))
+        file_name_ff = '{0}_ff.{1}'.format(*self.file_name.rsplit('.', 1))
+
         self.current_energy = sample[ENERGY]
         self.moveEnergy(self.current_energy)
         self.current_sample_date = sample[DATE]
@@ -156,35 +179,26 @@ class Magnetism(GenericTXMcommands):
                     self.collect(jj_offset_1)
                 self.move_select_target(1, theta)
 
-        # Execute flat field acquisitions #
+        self.collect_FF(sample, jj_offset_1, jj_offset_2)
+        self.go_to_sample_xyz_pos(sample[POS_X], sample[POS_Y], sample[POS_Z])
         self.moveTheta(0)
-        self.moveTheta(FF_THETA)
 
-        self.go_to_sample_xyz_pos(sample[FF_POS_X],
-                                  sample[FF_POS_Y],
-                                  sample[FF_POS_Z])
-        self.setExpTime(sample[FF_EXPTIME])
-        self.go_to_jj(sample[JJ_DOWN_1], sample[JJ_UP_1],
-                      angular_region[ZP_1])
-        sample_name = '%s_%s_%.2f' % (self.current_sample_date,
-                                      self.current_sample_name,
-                                      jj_offset_1)
-        for i in range(sample[FF_N_IMAGES]):
-            self.destination.write('collect %s_FF_%d.xrm\n' %
-                                   (sample_name, i))
-        self.go_to_jj(sample[JJ_DOWN_2], sample[JJ_UP_2],
-                      angular_region[ZP_2])
-        sample_name = '%s_%s_%.2f' % (self.current_sample_date,
-                                      self.current_sample_name,
-                                      jj_offset_2)
-        for i in range(sample[FF_N_IMAGES]):
-            self.destination.write('collect %s_FF_%d.xrm\n' %
-                                   (sample_name, i))
+        self.destination.close()
+        # Copy file_name contents in file_name_collect
+        # File to be loaded in TXM to collect raw images.
+        # Second file to be loaded in TXM
+        with open(file_name_collect, 'w') as img_collect_file:
+            with open(self.file_name, 'r') as db_file:
+                for line in db_file:
+                    img_collect_file.write(line.replace('_FF_', '_FF_END_'))
 
-        self.go_to_sample_xyz_pos(sample[POS_X],
-                                  sample[POS_Y],
-                                  sample[POS_Z])
-        self.moveTheta(0)
+        # File to be loaded in TXM and collect FF images
+        # First file to be loaded in TXM
+        ff_file = open(file_name_ff, 'w')
+        self.destination = ff_file
+        with ff_file:
+            self.collect_FF(sample, jj_offset_1, jj_offset_2)
+        ff_file.close()
 
     def collect_data(self):
         self.setBinning()
@@ -212,8 +226,7 @@ class Magnetism(GenericTXMcommands):
 
         # TODO: Check numbers for magnetism END action
 
-        # Select END action according DS TXMAutoPreprocessing: 4
-        # self.wait(300)
+        # Select END action according DS TXMAutoPreprocessing:
         # self.move_select_action(4)
         # self.move_target_workflow(0)
         ####
