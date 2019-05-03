@@ -1,59 +1,79 @@
 import numpy as np
-
 from txmcommands import GenericTXMcommands
+
 
 DATE = 0
 NAME = 1
-POS_X = 2
-POS_Y = 3
-POS_Z = 4
-THETA_REGIONS = 5
-ENERGY_REGIONS = 6
-N_IMAGES = 7
-FF_POS_X = 8
-FF_POS_Y = 9
-N_FF_IMAGES = 10
+ENERGY = 2
+POS_X = 3
+POS_Y = 4
+POS_Z = 5
+JJ_DOWN_1 = 6
+JJ_UP_1 = 7
+JJ_DOWN_2 = 8
+JJ_UP_2 = 9
+THETA_REGIONS = 10
+FF_THETA = 11
+FF_POS_X = 12
+FF_POS_Y = 13
+FF_POS_Z = 14
+FF_ZP_UP = 15
+FF_ZP_DOWN = 16
+FF_EXPTIME = 17
+FF_N_IMAGES = 18
 
 THETA_START = 0
 THETA_END = 1
 THETA_STEP = 2
-EXPTIME = 3
+ZP_1 = 3
+ZP_2 = 4
+EXPTIME = 5
+N_IMAGES = 6
 
-ENERGY = 0
-DET_Z = 1
-ZP_Z = 2
-ZP_STEP = 3
-EXPTIME_FF = 4
 
 FILE_NAME = 'magnetism.txt'
 
 samples = [
     [
-        '20180531'  # date
+        '20180531',  # date
         'sample1',  # name
-        -596.60,  # pos x
-        606.40,  # pos y
-        18.80,  # pos z
-        [  # tilt regions
+        520.0,  # energy
+        -838.00,  # pos x
+        -881.00,  # pos y
+        -349.30,  # pos z
+        -2.2,  # jj_down_1
+        0.9,  # jj_up_1
+        -6.2,  # jj_down_2
+        -3.1,  # jj_up_2
+        [  # angular regions
             [
                 -10,  # start
                 10,  # end
                 10,  # theta step
-                2,  # exposure time
+                111,  # zp_for_jjs_polarization_1
+                222,  # zp_for_jjs_polarization_2
+                1,  # exposure time
+                3  # Num Images
+            ],
+            [
+                15,  # start
+                21,  # end
+                2,  # theta step
+                333,  # zp_for_jjs_polarization_1
+                444,  # zp_for_jjs_polarization_2
+                3,  # exposure time
+                4  # Num Images
             ],
         ],
-        [  # jj positions
-            [
-                -3.3,    # jj_up
-                2.2  # jj_down
-            ]
-        ],
-        2,   # num images
-        20,  # FlatField position X
-        30,  # FlatField position x
-        10,  # num FF images
+        -45,  # FlatField theta
+        12,  # FlatField position x
+        12,  # FlatField position y
+        12,  # FlatField position z
+        -11000,  # FlatField ZP position for JJ up
+        -11040,  # FlatField ZP position for JJ down
+        2,  # Exposure time FF
+        10,  # Num FF images
     ],
-
 ]
 
 
@@ -62,6 +82,8 @@ class Magnetism(GenericTXMcommands):
     def __init__(self, samples=None, file_name=None):
         GenericTXMcommands.__init__(self, file_name=file_name)
         self.samples = samples
+        self.jj_offset_1 = None
+        self.jj_offset_2 = None
 
     def collect(self, jj_offset, sample_date=None, sample_name=None,
                 theta=None):
@@ -71,82 +93,130 @@ class Magnetism(GenericTXMcommands):
             sample_name = self.current_sample_name
         if theta is None:
             theta = self.current_theta
-        base_name = ('%s_%s_%.1f_%.1f_%.1f' % (sample_date, sample_name,
-                                               jj_offset, theta))
+        base_name = ('%s_%s_%.2f_%.2f' % (sample_date, sample_name,
+                                          jj_offset, theta))
         extension = 'xrm'
         if (self._repetitions == 0 or self._repetitions == 1 or
                 self._repetitions is None):
             file_name = '%s.%s' % (base_name, extension)
             self.destination.write('collect %s\n' % file_name)
         else:
-            for repetition in range(1, self._repetitions+1):
+            for repetition in range(self._repetitions):
                 file_name = '%s_%d.%s' % (base_name, repetition, extension)
                 self.destination.write('collect %s\n' % file_name)
 
     def collect_sample(self, sample):
-        self.moveEnergy(self, energy)
+        self.current_energy = sample[ENERGY]
+        self.moveEnergy(self.current_energy)
         self.current_sample_date = sample[DATE]
         self.current_sample_name = sample[NAME]
         self.go_to_sample_xyz_pos(sample[POS_X],
                                   sample[POS_Y],
                                   sample[POS_Z])
 
-        tilt_regions = sample[THETA_REGIONS]
-        self._repetitions = sample[N_IMAGES]
+        # Initialization #
+        jj_offset_1 = (sample[JJ_UP_1] + sample[JJ_DOWN_1]) / 2.0
+        jj_offset_2 = (sample[JJ_UP_2] + sample[JJ_DOWN_2]) / 2.0
+        self.jj_offset_1 = round(jj_offset_1, 2)
+        self.jj_offset_2 = round(jj_offset_2, 2)
+        angular_regions = sample[THETA_REGIONS]
+        self.go_to_jj(sample[JJ_DOWN_1], sample[JJ_UP_1],
+                      angular_regions[0][ZP_1])
+        ##################
 
-        # move theta to the min angle, in order to avoid backlash
-        self.moveTheta(-71.0)
-        self.wait(10)
-
-        for tilt_region in tilt_regions:
-            tilt_start = tilt_region[THETA_START]
-            tilt_end = tilt_region[THETA_END]
-            tilt_step = tilt_region[THETA_STEP]
-            exp_time = tilt_region[EXPTIME]
+        count_jj = 0
+        for angular_region in angular_regions:
+            self._repetitions = angular_region[N_IMAGES]
+            angle_start = angular_region[THETA_START]
+            angle_end = angular_region[THETA_END]
+            angle_step = angular_region[THETA_STEP]
+            exp_time = angular_region[EXPTIME]
             msg = "Region start must be different than end"
-            assert tilt_start != tilt_end, msg
-            tilt_step = abs(tilt_step)
-            if tilt_end - tilt_start < 1:
-                tilt_step *= -1
-            positions = np.arange(tilt_start, tilt_end, tilt_step)
-            positions = np.append(positions, tilt_end)
+            assert angle_start != angle_end, msg
+            angle_step = abs(angle_step)
+            if angle_end - angle_start < 1:
+                angle_step *= -1
+            positions = np.arange(angle_start, angle_end, angle_step)
+            positions = np.append(positions, angle_end)
             self.setExpTime(exp_time)
 
-            # Acquisition of an image for each ZP, at each angle,
-            # at each Energy.
+            # Acquisition of many images at each angle an jj offset position.
             for theta in positions:
+                count_jj += 1
                 self.moveTheta(theta)
+                if count_jj % 2 == 1:
+                    self.collect(jj_offset_1)
+                    self.go_to_jj(sample[JJ_DOWN_2], sample[JJ_UP_2],
+                                  angular_region[ZP_2])
+                    self.collect(jj_offset_2)
+                else:
+                    self.collect(jj_offset_2)
+                    self.go_to_jj(sample[JJ_DOWN_1], sample[JJ_UP_1],
+                                  angular_region[ZP_1])
+                    self.collect(jj_offset_1)
+                self.move_select_target(1, theta)
 
-                for e_zp_zone in sample[ENERGY_REGIONS]:
-
-                    energy = e_zp_zone[ENERGY]
-                    zp_central_pos = e_zp_zone[ZP_Z]
-                    zp_step = e_zp_zone[ZP_STEP]
-                    det_z = e_zp_zone[DET_Z]
-                    self.go_to_energy_zp_det(energy, zp_central_pos, det_z)
-                    self.collect()
-
-        # Execute flat field acquisitions
-        # move theta to 0 degrees - necessary for flat field measurement
+        # Execute flat field acquisitions #
         self.moveTheta(0)
-        self.go_to_sample_xy_pos(sample[FF_POS_X],
-                                 sample[FF_POS_Y])
+        self.moveTheta(FF_THETA)
 
-        for e_zp_zone in sample[ENERGY_REGIONS]:
-            energy = e_zp_zone[ENERGY]
-            zp_central_pos = e_zp_zone[ZP_Z]
-            det_z = e_zp_zone[DET_Z]
-            self.setExpTime(e_zp_zone[EXPTIME_FF])
-            self.go_to_energy_zp_det(energy, zp_central_pos, det_z)
-            sample_name = '%s_%.1f' % (sample[NAME], energy)
-            for i in range(sample[N_FF_IMAGES]):
-                self.destination.write('collect %s_FF_%d.xrm\n' %
-                                       (sample_name, i))
+        self.go_to_sample_xyz_pos(sample[FF_POS_X],
+                                  sample[FF_POS_Y],
+                                  sample[FF_POS_Z])
+        self.setExpTime(sample[FF_EXPTIME])
+        self.go_to_jj(sample[JJ_DOWN_1], sample[JJ_UP_1],
+                      angular_region[ZP_1])
+        sample_name = '%s_%s_%.2f' % (self.current_sample_date,
+                                      self.current_sample_name,
+                                      jj_offset_1)
+        for i in range(sample[FF_N_IMAGES]):
+            self.destination.write('collect %s_FF_%d.xrm\n' %
+                                   (sample_name, i))
+        self.go_to_jj(sample[JJ_DOWN_2], sample[JJ_UP_2],
+                      angular_region[ZP_2])
+        sample_name = '%s_%s_%.2f' % (self.current_sample_date,
+                                      self.current_sample_name,
+                                      jj_offset_2)
+        for i in range(sample[FF_N_IMAGES]):
+            self.destination.write('collect %s_FF_%d.xrm\n' %
+                                   (sample_name, i))
+
+        self.go_to_sample_xyz_pos(sample[POS_X],
+                                  sample[POS_Y],
+                                  sample[POS_Z])
+        self.moveTheta(0)
 
     def collect_data(self):
         self.setBinning()
+        # Select Pipeline according DS TXMAutoPreprocessing
+        self.move_select_action(0)
+        # Target: TOMO pipeline according DS TXMAutoPreprocessing
+        self.move_target_workflow(0)
+        self.wait(5)
+        num = 0
         for sample in self.samples:
+            num += 1
             self.collect_sample(sample)
+            # wait some time between samples (don't wait for last loop)
+            if num < len(self.samples):
+                self.wait(180)
+
+        # TODO: In case of magnetism, END action creates the stacks; which
+        # have to be created after the preprocessing of all angles, and for
+        # each of the samples. Only one sample at a time
+        # can be preprocessed currently with magnetism workflow.
+        # If the acquisition and preprocessing is not finished, the stacks
+        # should not be done. This action has to be managed in the DS
+        # txmautopreprocessing, and currently, it is most probably,
+        # not managed.
+
+        # TODO: Check numbers for magnetism END action
+
+        # Select END action according DS TXMAutoPreprocessing: 4
+        # self.wait(300)
+        # self.move_select_action(4)
+        # self.move_target_workflow(0)
+        ####
 
 
 if __name__ == '__main__':
