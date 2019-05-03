@@ -85,6 +85,7 @@ class Magnetism(GenericTXMcommands):
         self.samples = samples
         self.jj_offset_1 = None
         self.jj_offset_2 = None
+        self.folder_num = 1
 
     def collect(self, jj_offset, sample_date=None, sample_name=None,
                 theta=None):
@@ -109,6 +110,12 @@ class Magnetism(GenericTXMcommands):
     def collect_FF(self, sample, jj_offset_1, jj_offset_2):
         # Execute flat field acquisitions #
         self.moveTheta(0)
+
+        # Select folder to store raw data images
+        self.move_select_action(5)
+        self.move_target_folder(self.folder_num)
+        ###
+
         self.moveTheta(FF_THETA)
         self.go_to_sample_xyz_pos(sample[FF_POS_X], sample[FF_POS_Y],
                                   sample[FF_POS_Z])
@@ -166,6 +173,11 @@ class Magnetism(GenericTXMcommands):
             # Acquisition of many images at each angle an jj offset position.
             for theta in positions:
                 count_jj += 1
+                # Select folder to store raw data images
+                self.move_select_action(5)
+                self.move_target_folder(self.folder_num)
+                self.folder_num += 1
+                ###
                 self.moveTheta(theta)
                 if count_jj % 2 == 1:
                     self.collect(jj_offset_1)
