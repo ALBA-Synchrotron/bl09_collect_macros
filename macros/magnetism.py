@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from sardana.macroserver.macro import Macro, Type
 from sardana.macroserver.msexception import UnknownEnv
 from collectlib.magnetismlib import Magnetism
@@ -16,6 +18,8 @@ class magnetismbase(object):
     This allows to keep the same sample position, while changing
     the light polarization by means of moving the JJ slit positions.
     """
+
+    today = datetime.today().strftime("%Y%m%d")
 
     def _verify_dates_names(self, samples):
         for sample in samples:
@@ -41,19 +45,16 @@ class magnetismbase(object):
         magnetism_obj.generate()
 
         if start:
-            #autotomods = PyTango.DeviceProxy(
+            #automagnetism_ds = PyTango.DeviceProxy(
             #    "testbl09/ct/TXMAutoPreprocessing")
-            """
             import PyTango
-            autotomods = PyTango.DeviceProxy("BL09/CT/TXMAutoPreprocessing")
-            if autotomods.State() not in [PyTango.DevState.STANDBY]:
+            automagnetism_ds = PyTango.DeviceProxy("BL09/CT/TXMAutoPreprocessing")
+            if automagnetism_ds.State() not in [PyTango.DevState.STANDBY]:
                 raise Exception("Device must be in Standby mode "
                                 "to set TXM_file")
             else:
-                autotomods.txm_file = filename
-                autotomods.start()
-            """
-            pass
+                automagnetism_ds.txm_file = filename
+                automagnetism_ds.start()
 
 
 class magnetism(magnetismbase, Macro):
@@ -69,7 +70,8 @@ class magnetism(magnetismbase, Macro):
                  {'min': 1}]
 
     param_def = [
-        ['samples', [['date', Type.String, None, 'Sample date: YYYYMMDD'],
+        ['samples', [['date', Type.String, magnetismbase.today,
+                      'Sample date: YYYYMMDD'],
                      ['name', Type.String, None, 'Sample name'],
                      ['energy', Type.Float, None, 'Initial Energy'],
                      ['pos_x', Type.Float, None, 'Position of the X motor'],
