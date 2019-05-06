@@ -9,6 +9,16 @@ from collectlib.magnetismlib import Magnetism
 DATE = 0
 NAME = 1
 
+# angular regions position
+ANGULAR_REGIONS = 10
+
+# ZP for FFs (for both jj offset positions)
+FF_ZP_1 = 15
+FF_ZP_2 = 16
+
+# ZP parameter position inside angular region group
+ZP_1 = 3
+ZP_2 = 4
 
 class magnetismbase(object):
     """Generate TXM input file for image data collection, to perform
@@ -37,10 +47,43 @@ class magnetismbase(object):
                        "by suitably formatted name without underscores.")
                 raise ValueError(msg.format(sample_name))
 
-    # TODO: Verify ZPz
+    def _verify_samples(self, samples, zp_limit_neg, zp_limit_pos):
+        for sample in samples:
+            zp_positions = []
+            for angular_region in sample[ANGULAR_REGIONS]:
+                zp_jj_offset_1 = angular_region[ZP_1]
+                zp_jj_offset_2 = angular_region[ZP_2]
+                zp_positions.append(zp_jj_offset_1)
+                zp_positions.append(zp_jj_offset_2)
+            zp_positions.append(sample[FF_ZP_1])
+            zp_positions.append(sample[FF_ZP_2])
+            for zp_position in zp_positions:
+                if (zp_position < zp_limit_neg or
+                        zp_position > zp_limit_pos):
+                    msg = ("The sample {0} has the zone_plate position {1} "
+                           "out of range. The accepted range is "
+                           "from %s to %s um.") % (zp_limit_neg,
+                                                   zp_limit_pos)
+                    date_name = sample[DATE] + "_" + sample[NAME]
+                    raise ValueError(msg.format(date_name, zp_position))
 
     def run(self, samples, filename, start):
+        try:
+            zp_limit_neg = self.getEnv("ZP_Z_limit_neg")
+            # print(zp_limit_neg)
+        except UnknownEnv:
+            zp_limit_neg = float("-Inf")
+            # print(zp_limit_neg)
+        try:
+            zp_limit_pos = self.getEnv("ZP_Z_limit_pos")
+            # print(zp_limit_pos)
+        except UnknownEnv:
+            zp_limit_pos = float("Inf")
+            # print(zp_limit_pos)
+
         self._verify_dates_names(samples)
+        self._verify_samples(samples, zp_limit_neg, zp_limit_pos)
+
         magnetism_obj = Magnetism(samples, filename)
         magnetism_obj.generate()
 
