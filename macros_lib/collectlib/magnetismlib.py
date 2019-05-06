@@ -13,7 +13,7 @@ JJ_DOWN_1 = 6
 JJ_UP_1 = 7
 JJ_DOWN_2 = 8
 JJ_UP_2 = 9
-THETA_REGIONS = 10
+ANGULAR_REGIONS = 10
 FF_THETA = 11
 FF_POS_X = 12
 FF_POS_Y = 13
@@ -149,7 +149,7 @@ class Magnetism(GenericTXMcommands):
         jj_offset_2 = (sample[JJ_UP_2] + sample[JJ_DOWN_2]) / 2.0
         self.jj_offset_1 = round(jj_offset_1, 2)
         self.jj_offset_2 = round(jj_offset_2, 2)
-        angular_regions = sample[THETA_REGIONS]
+        angular_regions = sample[ANGULAR_REGIONS]
         self.go_to_jj(sample[JJ_DOWN_1], sample[JJ_UP_1],
                       angular_regions[0][ZP_1])
         ##################
