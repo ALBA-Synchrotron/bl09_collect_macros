@@ -95,7 +95,7 @@ class Magnetism(GenericTXMcommands):
             sample_name = self.current_sample_name
         if theta is None:
             theta = self.current_theta
-        base_name = ('%s_%s_%.2f_%.2f' % (sample_date, sample_name,
+        base_name = ('%s_%s_%.2f_%.1f' % (sample_date, sample_name,
                                           jj_offset, theta))
         extension = 'xrm'
         if (self._repetitions == 0 or self._repetitions == 1 or
@@ -120,12 +120,12 @@ class Magnetism(GenericTXMcommands):
         self.go_to_sample_xyz_pos(sample[FF_POS_X], sample[FF_POS_Y],
                                   sample[FF_POS_Z])
         self.setExpTime(sample[FF_EXPTIME])
-        self.go_to_jj(sample[FF_ZP_2], sample[JJ_UP_1], sample[ZP_1])
+        self.go_to_jj(sample[JJ_DOWN_1], sample[JJ_UP_1], sample[FF_ZP_1])
         sample_name = '%s_%s_%.2f' % (self.current_sample_date,
                                       self.current_sample_name, jj_offset_1)
         for i in range(sample[FF_N_IMAGES]):
             self.destination.write('collect %s_FF_%d.xrm\n' % (sample_name, i))
-        self.go_to_jj(sample[FF_ZP_2], sample[JJ_UP_2], sample[ZP_2])
+        self.go_to_jj(sample[JJ_DOWN_2], sample[JJ_UP_2], sample[FF_ZP_2])
         sample_name = '%s_%s_%.2f' % (self.current_sample_date,
                                       self.current_sample_name, jj_offset_2)
         for i in range(sample[FF_N_IMAGES]):
