@@ -116,7 +116,7 @@ class Magnetism(GenericTXMcommands):
         self.move_target_folder(self.folder_num)
         ###
 
-        self.moveTheta(FF_THETA)
+        self.moveTheta(sample[FF_THETA])
         self.go_to_sample_xyz_pos(sample[FF_POS_X], sample[FF_POS_Y],
                                   sample[FF_POS_Z])
         self.setExpTime(sample[FF_EXPTIME])
