@@ -191,6 +191,16 @@ class Magnetism(GenericTXMcommands):
                     self.collect(jj_offset_1)
                 self.move_select_target(1, theta)
 
+        # Create stacks for magnetism jj experiments, at the end of
+        # each of the samples according DS TXMAutoPreprocessing:
+        # stacks have to be created after the preprocessing of all angles,
+        # and for each of the samples. Only one sample at a time
+        # can be preprocessed currently with magnetism workflow.
+        # This action has to be managed in the DS txmautopreprocessing
+        self.move_select_action(7)
+        self.move_target_workflow(0)
+        ####
+
         self.collect_FF(sample, jj_offset_1, jj_offset_2)
         self.go_to_sample_xyz_pos(sample[POS_X], sample[POS_Y], sample[POS_Z])
         self.moveTheta(0)
@@ -227,21 +237,10 @@ class Magnetism(GenericTXMcommands):
             if num < len(self.samples):
                 self.wait(180)
 
-        # TODO: In case of magnetism, END action creates the stacks; which
-        # have to be created after the preprocessing of all angles, and for
-        # each of the samples. Only one sample at a time
-        # can be preprocessed currently with magnetism workflow.
-        # If the acquisition and preprocessing is not finished, the stacks
-        # should not be done. This action has to be managed in the DS
-        # txmautopreprocessing, and currently, it is most probably,
-        # not managed.
 
-        # TODO: Check numbers for magnetism END action
 
-        # Select END action according DS TXMAutoPreprocessing:
-        # self.move_select_action(4)
-        # self.move_target_workflow(0)
-        ####
+
+
 
 
 if __name__ == '__main__':
