@@ -20,6 +20,7 @@ FF_ZP_2 = 16
 ZP_1 = 3
 ZP_2 = 4
 
+
 class magnetismbase(object):
     """Generate TXM input file for image data collection, to perform
     magnetism tomography measurements, using the dichroism.
@@ -31,43 +32,41 @@ class magnetismbase(object):
 
     today = datetime.today().strftime("%Y%m%d")
 
-    def _verify_dates_names(self, samples):
-        for sample in samples:
-            sample_date = sample[DATE]
-            sample_name = sample[NAME]
-            if "_" in sample_date:
-                msg = ("Date must be given in YYYYMMDD format. "
-                       "It cannot contain underscore characters ('_'). "
-                       "Please modify date '{0}' by a suitably formatted "
-                       "date without underscores")
-                raise ValueError(msg.format(sample_date))
-            if "_" in sample_name:
-                msg = ("Sample name must not contain underscore "
-                       "characters ('_'). Please, modify sample name '{0}' "
-                       "by suitably formatted name without underscores.")
-                raise ValueError(msg.format(sample_name))
+    def _verify_dates_names(self, sample):
+        sample_date = sample[DATE]
+        sample_name = sample[NAME]
+        if "_" in sample_date:
+            msg = ("Date must be given in YYYYMMDD format. "
+                   "It cannot contain underscore characters ('_'). "
+                   "Please modify date '{0}' by a suitably formatted "
+                   "date without underscores")
+            raise ValueError(msg.format(sample_date))
+        if "_" in sample_name:
+            msg = ("Sample name must not contain underscore "
+                   "characters ('_'). Please, modify sample name '{0}' "
+                   "by suitably formatted name without underscores.")
+            raise ValueError(msg.format(sample_name))
 
-    def _verify_samples(self, samples, zp_limit_neg, zp_limit_pos):
-        for sample in samples:
-            zp_positions = []
-            for angular_region in sample[ANGULAR_REGIONS]:
-                zp_jj_offset_1 = angular_region[ZP_1]
-                zp_jj_offset_2 = angular_region[ZP_2]
-                zp_positions.append(zp_jj_offset_1)
-                zp_positions.append(zp_jj_offset_2)
-            zp_positions.append(sample[FF_ZP_1])
-            zp_positions.append(sample[FF_ZP_2])
-            for zp_position in zp_positions:
-                if (zp_position < zp_limit_neg or
-                        zp_position > zp_limit_pos):
-                    msg = ("The sample {0} has the zone_plate position {1} "
-                           "out of range. The accepted range is "
-                           "from %s to %s um.") % (zp_limit_neg,
-                                                   zp_limit_pos)
-                    date_name = sample[DATE] + "_" + sample[NAME]
-                    raise ValueError(msg.format(date_name, zp_position))
+    def _verify_sample(self, sample, zp_limit_neg, zp_limit_pos):
+        zp_positions = []
+        for angular_region in sample[ANGULAR_REGIONS]:
+            zp_jj_offset_1 = angular_region[ZP_1]
+            zp_jj_offset_2 = angular_region[ZP_2]
+            zp_positions.append(zp_jj_offset_1)
+            zp_positions.append(zp_jj_offset_2)
+        zp_positions.append(sample[FF_ZP_1])
+        zp_positions.append(sample[FF_ZP_2])
+        for zp_position in zp_positions:
+            if (zp_position < zp_limit_neg or
+                    zp_position > zp_limit_pos):
+                msg = ("The sample {0} has the zone_plate position {1} "
+                       "out of range. The accepted range is "
+                       "from %s to %s um.") % (zp_limit_neg,
+                                               zp_limit_pos)
+                date_name = sample[DATE] + "_" + sample[NAME]
+                raise ValueError(msg.format(date_name, zp_position))
 
-    def run(self, samples, filename, start):
+    def run(self, sample, filename, start):
         try:
             zp_limit_neg = self.getEnv("ZP_Z_limit_neg")
             # print(zp_limit_neg)
@@ -81,17 +80,18 @@ class magnetismbase(object):
             zp_limit_pos = float("Inf")
             # print(zp_limit_pos)
 
-        self._verify_dates_names(samples)
-        self._verify_samples(samples, zp_limit_neg, zp_limit_pos)
+        self._verify_dates_names(sample[0])
+        self._verify_sample(sample[0], zp_limit_neg, zp_limit_pos)
 
-        magnetism_obj = Magnetism(samples, filename)
+        magnetism_obj = Magnetism(sample[0], filename)
         magnetism_obj.generate()
 
         if start:
             #automagnetism_ds = PyTango.DeviceProxy(
             #    "testbl09/ct/TXMAutoPreprocessing")
             import PyTango
-            automagnetism_ds = PyTango.DeviceProxy("BL09/CT/TXMAutoPreprocessing")
+            automagnetism_ds = PyTango.DeviceProxy(
+                "BL09/CT/TXMAutoPreprocessing")
             if automagnetism_ds.State() not in [PyTango.DevState.STANDBY]:
                 raise Exception("Device must be in Standby mode "
                                 "to set TXM_file")
@@ -113,37 +113,37 @@ class magnetism(magnetismbase, Macro):
                  {'min': 1}]
 
     param_def = [
-        ['samples', [['date', Type.String, magnetismbase.today,
-                      'Sample date: YYYYMMDD'],
-                     ['name', Type.String, None, 'Sample name'],
-                     ['energy', Type.Float, None, 'Initial Energy'],
-                     ['pos_x', Type.Float, None, 'Position of the X motor'],
-                     ['pos_y', Type.Float, None, 'Position of the Y motor'],
-                     ['pos_z', Type.Float, None, 'Position of the Z motor'],
-                     ['jj_down_1', Type.Float, None, 'JJ down polarization 1'],
-                     ['jj_up_1', Type.Float, None, 'JJ up polarization 1'],
-                     ['jj_down_2', Type.Float, None, 'JJ down polarization 2'],
-                     ['jj_up_2', Type.Float, None, 'JJ up polarization 2'],
-                     ['angular_regions', theta_def, None, 'Angular regions'],
-                     ['ff_theta', Type.Float, None, ('Position of tilt angle'
-                                                     ' for the flat field'
-                                                     ' acquisition')],
-                     ['ff_pos_x', Type.Float, None, ('Position of the X motor'
-                                                     ' for the flat field'
-                                                     ' acquisition')],
-                     ['ff_pos_y', Type.Float, None, ('Position of the Y motor'
-                                                     ' for the flat field'
-                                                     ' acquisition')],
-                     ['ff_pos_z', Type.Float, None, ('Position of the Z motor'
-                                                     ' for the flat field'
-                                                     ' acquisition')],
-                     ['ff_zp_1', Type.Float, None, 'ZPz position for JJ '
-                                                   'offset position 1'],
-                     ['ff_zp_2', Type.Float, None, 'ZPz position for JJ '
-                                                   'offset position 2'],
-                     ['ff_exptime', Type.Float, 1, 'FF Exposure time'],
-                     ['ff_n_images', Type.Integer, 10, 'Number of FF images']],
-         None, 'List of samples'],
+        ['sample', [['date', Type.String, magnetismbase.today,
+                     'Sample date: YYYYMMDD'],
+                    ['name', Type.String, None, 'Sample name'],
+                    ['energy', Type.Float, None, 'Initial Energy'],
+                    ['pos_x', Type.Float, None, 'Position of the X motor'],
+                    ['pos_y', Type.Float, None, 'Position of the Y motor'],
+                    ['pos_z', Type.Float, None, 'Position of the Z motor'],
+                    ['jj_down_1', Type.Float, None, 'JJ down polarization 1'],
+                    ['jj_up_1', Type.Float, None, 'JJ up polarization 1'],
+                    ['jj_down_2', Type.Float, None, 'JJ down polarization 2'],
+                    ['jj_up_2', Type.Float, None, 'JJ up polarization 2'],
+                    ['angular_regions', theta_def, None, 'Angular regions'],
+                    ['ff_theta', Type.Float, None, ('Position of tilt angle'
+                                                    ' for the flat field'
+                                                    ' acquisition')],
+                    ['ff_pos_x', Type.Float, None, ('Position of the X motor'
+                                                    ' for the flat field'
+                                                    ' acquisition')],
+                    ['ff_pos_y', Type.Float, None, ('Position of the Y motor'
+                                                    ' for the flat field'
+                                                    ' acquisition')],
+                    ['ff_pos_z', Type.Float, None, ('Position of the Z motor'
+                                                    ' for the flat field'
+                                                    ' acquisition')],
+                    ['ff_zp_1', Type.Float, None, 'ZPz position for JJ '
+                                                  'offset position 1'],
+                    ['ff_zp_2', Type.Float, None, 'ZPz position for JJ '
+                                                  'offset position 2'],
+                    ['ff_exptime', Type.Float, 1, 'FF Exposure time'],
+                    ['ff_n_images', Type.Integer, 10, 'Number of FF images'],
+                    {'min': 1, 'max': 1}], None, 'sample'],
         ['out_file', Type.Filename, None, 'Output file'],
         ['start', Type.Boolean, True, 'Start the Device for acquisition']
     ]

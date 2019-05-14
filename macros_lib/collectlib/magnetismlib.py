@@ -34,55 +34,53 @@ N_IMAGES = 6
 
 FILE_NAME = 'magnetism.txt'
 
-samples = [
-    [
-        '20180531',  # date
-        'sample1',  # name
-        520.0,  # energy
-        -838.00,  # pos x
-        -881.00,  # pos y
-        -349.30,  # pos z
-        -2.2,  # jj_down_1
-        0.9,  # jj_up_1
-        -6.2,  # jj_down_2
-        -3.1,  # jj_up_2
-        [  # angular regions
-            [
-                -10,  # start
-                10,  # end
-                10,  # theta step
-                111,  # zp_for_jjs_polarization_1
-                222,  # zp_for_jjs_polarization_2
-                1,  # exposure time
-                3  # Num Images
-            ],
-            [
-                15,  # start
-                21,  # end
-                2,  # theta step
-                333,  # zp_for_jjs_polarization_1
-                444,  # zp_for_jjs_polarization_2
-                3,  # exposure time
-                4  # Num Images
-            ],
+sample = [
+    '20180531',  # date
+    'sample1',  # name
+    520.0,  # energy
+    -838.00,  # pos x
+    -881.00,  # pos y
+    -349.30,  # pos z
+    -2.2,  # jj_down_1
+    0.9,  # jj_up_1
+    -6.2,  # jj_down_2
+    -3.1,  # jj_up_2
+    [  # angular regions
+        [
+            -10,  # start
+            10,  # end
+            10,  # theta step
+            111,  # zp_for_jjs_polarization_1
+            222,  # zp_for_jjs_polarization_2
+            1,  # exposure time
+            3  # Num Images
         ],
-        -45,  # FlatField theta
-        12,  # FlatField position x
-        12,  # FlatField position y
-        12,  # FlatField position z
-        -11000,  # FlatField ZP position for JJ 1
-        -11040,  # FlatField ZP position for JJ 2
-        2,  # Exposure time FF
-        10,  # Num FF images
+        [
+            15,  # start
+            21,  # end
+            2,  # theta step
+            333,  # zp_for_jjs_polarization_1
+            444,  # zp_for_jjs_polarization_2
+            3,  # exposure time
+            4  # Num Images
+        ],
     ],
+    -45,  # FlatField theta
+    12,  # FlatField position x
+    12,  # FlatField position y
+    12,  # FlatField position z
+    -11000,  # FlatField ZP position for JJ 1
+    -11040,  # FlatField ZP position for JJ 2
+    2,  # Exposure time FF
+    10,  # Num FF images
 ]
 
 
 class Magnetism(GenericTXMcommands):
 
-    def __init__(self, samples=None, file_name=None):
+    def __init__(self, sample=None, file_name=None):
         GenericTXMcommands.__init__(self, file_name=file_name)
-        self.samples = samples
+        self.sample = sample
         self.jj_offset_1 = None
         self.jj_offset_2 = None
         self.folder_num = 1
@@ -192,11 +190,12 @@ class Magnetism(GenericTXMcommands):
                 self.move_select_target(1, theta)
 
         # Create stacks for magnetism jj experiments, at the end of
-        # each of the samples according DS TXMAutoPreprocessing:
-        # stacks have to be created after the preprocessing of all angles,
-        # and for each of the samples. Only one sample at a time
-        # can be preprocessed currently with magnetism workflow.
-        # This action has to be managed in the DS txmautopreprocessing
+        # the sample according DS TXMAutoPreprocessing:
+        # stacks have to be created after the preprocessing of all angles.
+        # Only one sample at a time can be preprocessed with
+        # magnetism JJs workflow, because a manual positioning has to be
+        # done after FF acquisition: then two different txt files (FF and
+        # target images) shall be loaded in TXM for data collection.
         self.move_select_action(7)
         self.move_target_workflow(0)
         ####
@@ -224,25 +223,13 @@ class Magnetism(GenericTXMcommands):
 
     def collect_data(self):
         self.setBinning()
-        # Select Pipeline according DS TXMAutoPreprocessing
+        # Select Magnetism Pipeline according DS TXMAutoPreprocessing
         self.move_select_action(0)
-        # Target: TOMO pipeline according DS TXMAutoPreprocessing
         self.move_target_workflow(0)
         self.wait(5)
-        num = 0
-        for sample in self.samples:
-            num += 1
-            self.collect_sample(sample)
-            # wait some time between samples (don't wait for last loop)
-            if num < len(self.samples):
-                self.wait(180)
-
-
-
-
-
+        self.collect_sample(self.sample)
 
 
 if __name__ == '__main__':
-    magnetism_obj = Magnetism(samples, FILE_NAME)
+    magnetism_obj = Magnetism(sample, FILE_NAME)
     magnetism_obj.generate()
