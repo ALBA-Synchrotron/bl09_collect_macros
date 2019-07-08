@@ -12,7 +12,6 @@ FF_POS_X = 6
 FF_POS_Y = 7
 EXP_TIME_FF = 8
 N_FF_IMAGES = 9
-N_IMAGES = 10
 
 ENERGY = 0
 DET_Z = 1
@@ -25,12 +24,13 @@ REGION_EXPTIME = 3
 ZP_Z = 4
 ZP_STEP = 5
 NUM_ZPS = 6
+N_IMAGES = 7
 
 FILE_NAME = 'manytomos.txt'
 
 samples = [
     [
-        '20171124'  # date
+        '20171124',  # date
         'sample1',  # name
         0,  # pos x
         0,  # pos y
@@ -48,6 +48,7 @@ samples = [
                         50,  # ZP Z central position
                         0.2,  # ZP step
                         3,  # number of ZP positions
+                        4,  # num images
                     ],
                 ],
             ],
@@ -55,7 +56,7 @@ samples = [
         2,  # flat field position x
         2,  # flat field position y
         1,  # flat field exposure time
-        4,  # num images
+        5,  # num of FF images
     ],
 
 ]
@@ -120,9 +121,9 @@ class AutoTomosClass(GenericTXMcommands):
             self.wait(10)
 
             angular_regions = e_zp_zone[ANGULAR_REGIONS]
-            self._repetitions = sample[N_IMAGES]
 
             for angular_region in angular_regions:
+                self._repetitions = angular_region[N_IMAGES]
                 start = angular_region[REGION_START]
                 end = angular_region[REGION_END]
                 angle_step = angular_region[REGION_STEP]

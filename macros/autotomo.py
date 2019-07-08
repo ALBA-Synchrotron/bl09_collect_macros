@@ -13,6 +13,7 @@ regions_def = [['start', Type.Float, None, 'Theta start position'],
                ['zp_z', Type.Float, None, 'ZonePlate Z position'],
                ['zp_step', Type.Float, 0, 'ZonePlate step'],
                ['num_zps', Type.Float, 1, 'Number of ZonePlate positions'],
+               ['n_images', Type.Integer, 1, 'Number of images per angle'],
                {'min': 1, 'max': 200}]
 
 energy_zp_def = [['energy', Type.Float, None, 'Beam energy'],
@@ -130,9 +131,8 @@ class autotomo(autotomobase, Macro):
                                                      ' for the flat field'
                                                      ' acquisition')],
                      ['exp_time_ff', Type.Float, None, 'FF exposure time'],
-                     ['n_FF_images', Type.Integer, 10, 'Number of FF images'],
-                     ['n_images', Type.Integer, 1, ('Number of images'
-                                                    ' per angle')]],
+                     ['n_FF_images', Type.Integer, 10, 'Number of FF images']
+                     ],
             None, 'List of samples'],
         ['out_file', Type.Filename, None, 'Output file'],
         ['start', Type.Boolean, True, 'Start the Device for acquisition']
