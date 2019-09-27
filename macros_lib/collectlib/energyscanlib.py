@@ -1,7 +1,7 @@
 import sys
 import numpy as np
 
-from txmcommands import GenericTXMcommands
+from .txmcommands import GenericTXMcommands
 
 DATE = 0
 NAME = 1
